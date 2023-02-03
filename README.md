@@ -6,7 +6,8 @@
 # Files
 - [PDF Presentation](https://github.com/tmcroyce/UFC_Prediction/blob/master/presentation.pdf)
    - Note: Not updated since Version 1
-- [Video Presentation of Streamlit Application](https://www.youtube.com/watch?v=dl-JhDgQbRA) **TODO: ADD NEW!**
+- [Video Presentation of Streamlit Application](https://www.youtube.com/watch?v=dl-JhDgQbRA) 
+   - Note: Not updated since Version 1
 - [Scraping Notebook](UFC_Scraping_Notebook.pdf)
 - [Final Notebook](Final_Notebook.pdf)
 
