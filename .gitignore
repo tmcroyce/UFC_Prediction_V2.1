@@ -1,0 +1,12 @@
+V1_final_notebooks
+data
+models
+models/
+V2.1
+chromedriver.exe
+
+models/Bagged_Trees.pkl
+models/Bagged_Trees.pkl
+models/Decision_Tree.pkl
+models/Extra_Trees_Gridsearched_1.pkl
+models/Extra_Trees_Gridsearched_2.pkl
