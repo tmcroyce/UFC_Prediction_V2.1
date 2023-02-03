@@ -1,7 +1,7 @@
 # UFC_Prediction_V2.1
 
 # The UFC Prediction Capstone
-![Martial Arts](kick_photo.jpg)
+![Martial Arts](images/spaceufc.jpg)
 
 # Files
 - [PDF Presentation (Note: Not updated since Version 1)](https://github.com/tmcroyce/UFC_Prediction/blob/master/presentation.pdf)
