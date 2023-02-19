@@ -4,8 +4,10 @@
 ![Martial Arts](images/spaceufc.png)
 
 # Files
-- [PDF Presentation (Note: Not updated since Version 1)](https://github.com/tmcroyce/UFC_Prediction/blob/master/presentation.pdf)
-- [Video Presentation of Streamlit Application](https://www.youtube.com/watch?v=dl-JhDgQbRA) **TODO: ADD NEW!**
+- [PDF Presentation](https://github.com/tmcroyce/UFC_Prediction/blob/master/presentation.pdf)
+   - Note: Not updated since Version 1
+- [Video Presentation of Streamlit Application](https://www.youtube.com/watch?v=dl-JhDgQbRA) 
+   - Note: Not updated since Version 1
 - [Scraping Notebook](UFC_Scraping_Notebook.pdf)
 - [Final Notebook](Final_Notebook.pdf)
 
@@ -38,7 +40,7 @@ Further, individual events and fights, and much from the final streamlit applica
 
 The data itself is fight-by-fight based data, originally from over 8,000 fights (which, after dropping for lack of data, decreased to around 5,000 by the final testing dataframe).
 
-There are around 400 features in this dataset, after all are added.
+There are around 600 features in this dataset, after all are added.
 
 
 ### Define Target Variable
@@ -81,7 +83,7 @@ All in all, there were aproximately 350 features in the final test set.
 
 The initial model (decision tree) achieved an accuracy of 60%. 
 
-After iterating on a variety of models, including decision tree, logistic regression, bagged trees, extrra trees, KNN, and random forest, I found the best performing model to be an extra trees model which tested at 70% accuracy. 
+After iterating on a variety of models, including decision tree, logistic regression, bagged trees, extrra trees, KNN, and random forest, I found the best performing model to test at 73% accuracy. 
 
 ## Project Conclusion
 
