@@ -36,7 +36,7 @@ home2 = 'C:/Users/Travis/OneDrive/Data Science/Personal_Projects/Sports/UFC_Pred
 os.chdir(home)
 
 #------------------------------  Define Functions -----------------------------------------------------------------
-# function to return the next 2 UFC events
+# function to return the next 3 UFC events using BeautifulSoup
 def get_next_events(url):
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
@@ -71,7 +71,7 @@ def get_next_events(url):
     
     return data
 
-# Function to get the fight card for a given event
+# Function to get the fight card for a given event using BeautifulSoup
 def get_event_fights(event_url):
     page = requests.get(event_url)
     soup = BeautifulSoup(page.content, 'html.parser')
@@ -108,7 +108,7 @@ def get_event_fights(event_url):
         n = n + 1
     return data
 
-
+# Find secret number in ufc events using BS & Selenium
 def secret_number(event_url):
     # if no driver open, open one
     driver = None
@@ -137,8 +137,7 @@ def secret_number(event_url):
     matchup_url = iframe_text[matchup+8:matchup+12]
     print('matchup_url: ' + matchup_url)
     secret_number = matchup_url
-    return secret_number
-
+    return matchup
 
 # get next events if event fighter data is not na
 def get_next_events2(url):
@@ -150,6 +149,7 @@ def get_next_events2(url):
             data = data.drop(i)
     return data
 
+# get next events from UFCStats.com using BS
 def get_next_event_ufcstats():
     url = 'http://www.ufcstats.com/statistics/events/upcoming'
     page = requests.get(url)
@@ -164,6 +164,8 @@ def get_next_event_ufcstats():
     data = pd.DataFrame({'event_title': [event_title], 'event_url': [event1_url], 'event_date': [event_date]})
     return data
 
+
+# get fighter urls from UFCStats.com using BS
 def get_fighter_urls(event_details_url):
     page = requests.get(event_details_url)
     soup = BeautifulSoup(page.content, 'html.parser')
@@ -186,7 +188,6 @@ def get_fighter_urls(event_details_url):
     return next_event_data
 
 
-
 # check if it is a saturday
 def is_saturday():
     today = str(datetime.today().weekday())
@@ -197,27 +198,20 @@ def is_saturday():
 
 # if it is a saturday, get the current event, otherwise, get the next event
 
-
+# Get next event from ufcstats.com
 next_eventz = get_next_event_ufcstats()
-
-
-# print the day of the week
-#st.write('Today is a ' + str(datetime.today().weekday()))
 
 
 ##########           DATA        ################
 
 data = pd.read_csv(home + '/final/aggregates/Double_Fights_DF_V14.csv')
 
-
 ##########           GET EVENTS       ################
 
 # make sure events have fight info. If not, disregard that event
 next = get_next_events2('https://www.ufc.com/events')
 
-
 ########           Select Next Event    ################
-
 
 event = st.sidebar.selectbox('Select Event', next['event_title'])
 selected_event = event
@@ -240,6 +234,7 @@ selected_fighter_2 = fight.split(' vs. ')[1].strip()
 page = requests.get(event_url)
 soup = BeautifulSoup(page.content, 'html.parser')
 h = soup.find_all('div', class_='c-listing-fight')
+
 data_fmid = []
 for i in h:
     data_fmid.append(i['data-fmid'])
@@ -308,7 +303,9 @@ def grab_matchup_data(matchup_url):
     
     return a_record, b_record, a_height, b_height, a_reach, b_reach, a_leg, b_leg
 
-url = 'https://www.ufc.com/matchup/' + selected_event_secret_number + '/' + next_event[next_event['fighter1'] == selected_fighter_1]['fight_number'].values[0]
+url = 'https://www.ufc.com/matchup/' + str(selected_event_secret_number) + '/' + next_event[next_event['fighter1'] == selected_fighter_1]['fight_number'].values[0]
+
+st.write('ufc_matchup_url_xtra: ' + url)
 
 a_record, b_record, a_height, b_height, a_reach, b_reach, a_leg, b_leg = grab_matchup_data(url)
 
@@ -413,7 +410,7 @@ try:
     col1, col2 = st.columns(2)
     with col1:
         st.subheader(selected_fighter_1)
-        st.image(fighter1_img, width=300)
+        st.image(fighter1_img, height = 500, use_column_width=True)
         st.metric(label = 'Vegas Odds', value=next_event['fighter1_odds'][next_event['fighter1'] == selected_fighter_1].values[0])
         st.metric(label = 'Odds-Implied Probability', 
                     value=odds_to_prob(next_event['fighter1_odds'][next_event['fighter1'] == selected_fighter_1].values[0]))
@@ -423,7 +420,7 @@ try:
 
     with col2:
         st.subheader(selected_fighter_2)
-        st.image(fighter2_img, width=300)
+        st.image(fighter2_img, height = 500, use_column_width=True)
         st.metric(label = 'Vegas Odds', value=next_event['fighter2_odds'][next_event['fighter2'] == selected_fighter_2].values[0])
         st.metric(label = 'Odds-Implied Probability', 
                     value=odds_to_prob(next_event['fighter2_odds'][next_event['fighter2'] == selected_fighter_2].values[0]))
