@@ -108,37 +108,6 @@ def get_event_fights(event_url):
         n = n + 1
     return data
 
-# Find secret number in ufc events using BS & Selenium
-def secret_number(event_url):
-    # if no driver open, open one
-    driver = None
-    if (driver == None):
-        driver = webdriver.Chrome('C:\\Users\\Travis\\OneDrive\\Data Science\\Personal_Projects\\Sports\\UFC_Prediction_V2\\chromedriver.exe')
-    else:
-        driver = driver
-    
-    driver.get(event_url)
-    time.sleep(3)
-    # click the first matchup
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    pretty = soup.prettify()
-    # find first data-fmid to get first matchup
-    fmid_start = pretty.find('data-fmid')
-    fmid = pretty[fmid_start+11:fmid_start+16]
-    driver.get(event_url +'#' + fmid)
-    time.sleep(6)
-    # find all links within page
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
-    # find all iframe src
-    iframe = soup.find_all('iframe')
-    # find all links
-    iframe_text = str(iframe)
-    matchup = iframe_text.find('matchup')
-    matchup_url = iframe_text[matchup+8:matchup+12]
-    print('matchup_url: ' + matchup_url)
-    secret_number = matchup_url
-    return matchup
-
 # get next events if event fighter data is not na
 def get_next_events2(url):
     data = get_next_events(url)
@@ -210,240 +179,48 @@ data = pd.read_csv(home + '/final/aggregates/Double_Fights_DF_V14.csv')
 
 # make sure events have fight info. If not, disregard that event
 next = get_next_events2('https://www.ufc.com/events')
+next_event_title = next['event_title'][0]
+
+# load next event data, if it exists
+try:
+    next_event_data = pd.read_csv(home + '/final/next_fights/'+ next_event_title+ '_.csv')
+except:
+    st.write('No data for ' + next_event_title)
 
 ########           Select Next Event    ################
+# import Image capabilities
+from PIL import Image
 
-event = st.sidebar.selectbox('Select Event', next['event_title'])
+
+event = next_event_title
 selected_event = event
-event_url =  next['event_url'][next['event_title'] == selected_event].values[0]
-selected_event_secret_number = secret_number(event_url)
 
-next_event = get_event_fights(event_url)
-fight = st.sidebar.selectbox('Select Fight', next_event['fighter1'] + ' vs. ' + next_event['fighter2'])
+fight = st.sidebar.selectbox('Select Fight', next_event_data['fighter1'] + ' vs. ' + next_event_data['fighter2'])
 
+# get fight number selected
 ## Get Names ##
 
 selected_fighter_1 = fight.split(' vs. ')[0]
 selected_fighter_2 = fight.split(' vs. ')[1].strip()
 
 
-########          Scrape UFC.com Data    ################
-
-# get the matchup fight numbers
-
-page = requests.get(event_url)
-soup = BeautifulSoup(page.content, 'html.parser')
-h = soup.find_all('div', class_='c-listing-fight')
-
-data_fmid = []
-for i in h:
-    data_fmid.append(i['data-fmid'])
-
-next_event['fight_number'] = data_fmid[:len(next_event)]
-next_event['matchup_url'] = event_url +'#' + next_event['fight_number'].astype(str)
-selected_matchup_url = next_event['matchup_url'][next_event['fighter1'] == selected_fighter_1].values[0]
-
-st.table(next_event)
-
-st.write(' FOR EDIT -- selected_matchup_url: ' + selected_matchup_url)
-
-# get iframe srcs for each matchup
-matchup_urls = []
-for i in range(0, len(next_event)):
-    matchup_urls.append(next_event['matchup_url'][i])
-
-# get iframe srcs for each matchup
-iframe_srcs = []
-for i in range(0, len(matchup_urls)):   
-    driver = webdriver.Chrome(executable_path=home + '/chromedriver')
-    # load matchup page with selenium
-    driver.get(matchup_urls[i])
-    # get iframe src
-    iframe_src = driver.find_element_by_tag_name('iframe').get_attribute('src')
-    iframe_srcs.append(iframe_src)
+st.table(next_event_data)
 
 
-st.table(iframe_srcs)
-
-
-
-
-def grab_matchup_data(iframe_src):
-        # Make a request to the iframe source URL to load its contents
-    iframe_response = requests.get(iframe_src)
-    iframe_soup = BeautifulSoup(iframe_response.text, 'html.parser')
-
-    # get fighter links
-    fighter_links = []
-    for link in iframe_soup.find_all('a', href=True):
-        if '/athlete/' in link['href']:
-            fighter_links.append(link['href'])
-
-    # first fighter link is red
-    red_fighter_link = fighter_links[0]
-    blue_fighter_link = fighter_links[1]
-
-    # get fighter names from links
-    red_fighter_name = red_fighter_link.split('/')[-1]
-    blue_fighter_name = blue_fighter_link.split('/')[-1]
-    # replace - with space
-    red_fighter_name = red_fighter_name.replace('-', ' ')
-    blue_fighter_name = blue_fighter_name.replace('-', ' ')
-
-
-    # Find the 'c-stat-group__container' element, which contains the relevant data
-    stat_group_container = iframe_soup.find('div', class_='c-stat-group__container')
-
-    # Extract all text from the 'c-stat-group__container' element
-    texts = []
-    for element in stat_group_container.find_all(recursive=True):
-        if element.string:
-            texts.append(element.string.strip())
-
-    # Print the extracted text
-    for text in texts:
-        print(text)
-
-    # Assign the extracted text to variables
-    red_fighter_record = texts[0]
-    blue_fighter_record = texts[2]
-    red_fighter_last_fight = texts[3]
-    blue_fighter_last_fight = texts[5]
-    red_fighter_country = texts[6]
-    blue_fighter_country = texts[8]
-    red_fighter_height = texts[9]
-    blue_fighter_height = texts[11]
-    red_fighter_weight = texts[12]
-    blue_fighter_weight = texts[14]
-    red_fighter_reach = texts[15]
-    blue_fighter_reach = texts[17]
-    red_fighter_leg_reach = texts[18]
-    blue_fighter_leg_reach = texts[20]
-
-    # turn to df
-    data = {'red_fighter_name': red_fighter_name, 'blue_fighter_name': blue_fighter_name,
-            'red_fighter_link': red_fighter_link, 'blue_fighter_link': blue_fighter_link,
-            'red_fighter_record': red_fighter_record, 'blue_fighter_record': blue_fighter_record,
-            'red_fighter_last_fight': red_fighter_last_fight, 'blue_fighter_last_fight': blue_fighter_last_fight,
-            'red_fighter_country': red_fighter_country, 'blue_fighter_country': blue_fighter_country,
-            'red_fighter_height': red_fighter_height, 'blue_fighter_height': blue_fighter_height,
-            'red_fighter_weight': red_fighter_weight, 'blue_fighter_weight': blue_fighter_weight,
-            'red_fighter_reach': red_fighter_reach, 'blue_fighter_reach': blue_fighter_reach,
-            'red_fighter_leg_reach': red_fighter_leg_reach, 'blue_fighter_leg_reach': blue_fighter_leg_reach}
-
-    return pd.DataFrame(data, index=[0])
-
-
-
-# # Function to scrape UFC fight data
-# def grab_matchup_data(matchup_url):
-#     response = requests.get(matchup_url)
-#     soup = BeautifulSoup(response.text, 'html.parser').text
-#     soup = soup.replace('   ', '').replace('\n', '')
-
-#     od = soup.find('Odds')
-#     rec = soup.find('Record')
-#     a_record = soup[od + 5 : rec - 2]
-#     last_fight = soup.find("Last Fight")
-#     b_record = soup[rec + 7 : last_fight - 5]
-
-#     hite = soup.find('Height')
-#     f = soup.find("' ")
-#     a_height = soup[f -1 : hite - 2]
-#     # find second occurance of f
-#     f2 = soup.find("' ", f + 1)
-#     b_height = soup[hite + 7 : f2+5]
-
-#     # Find reach
-#     reach = soup.find('Reach')
-#     # find second occurance of "LB"
-#     lb = soup.find('LB')
-#     lb2 = soup.find('LB', lb + 1)
-#     a_reach = soup[lb2 +5 : reach ]
-#     inn = soup.find("in ")
-#     # get the word after reach
-#     big_space = soup.find('  ', reach + 1)
-#     b_reach = soup[reach + 6 : big_space]
-
-#     # Find Leg Reach
-#     leg = soup.find('Leg Reach')
-#     big_space2 = soup.find('  ', big_space + 1)
-#     a_leg = soup[big_space2 + 2 : leg]
-#     big_space4 = soup.find('  ', big_space2 + 2)
-#     b_leg = soup[leg + 10 : leg + 17]
-
-#     a_record = a_record.strip()
-#     b_record = b_record.strip()
-
-#     a_height_ft = float(a_height[:1])
-#     a_height_in = float(a_height[3:].replace("'", "").replace('"', ''))
-#     a_height = (a_height_ft * 12) + a_height_in 
-
-
-#     b_height_ft = float(b_height[:1])
-#     b_height_in = float(b_height[3:].replace("'", "").replace('"', ''))
-#     b_height = (b_height_ft * 12) + b_height_in
-
-#     a_reach = float(a_reach.replace(' in', '').strip())
-#     b_reach = float(b_reach.replace(' in', '').strip())
-
-#     a_leg = float(a_leg.replace(' in', '').strip())
-#     b_leg = float(b_leg.replace(' in', '').strip())
-
-    
-#     return a_record, b_record, a_height, b_height, a_reach, b_reach, a_leg, b_leg
-
-url = ('https://www.ufc.com/matchup/' + str(selected_event_secret_number) + '/' + 
-        next_event[next_event['fighter1'] == selected_fighter_1]['fight_number'].values[0] +
-        '/pre')
-
-st.write('ufc_matchup_url_xtra: ' + url)
-
-
-matchup_data = grab_matchup_data(url)
-
-a_record = matchup_data['red_fighter_record'].values[0]
-b_record = matchup_data['blue_fighter_record'].values[0]
-a_height = matchup_data['red_fighter_height'].values[0]
-b_height = matchup_data['blue_fighter_height'].values[0]
-a_weight = matchup_data['red_fighter_weight'].values[0]
-b_weight = matchup_data['blue_fighter_weight'].values[0]
-a_reach = matchup_data['red_fighter_reach'].values[0]
-b_reach = matchup_data['blue_fighter_reach'].values[0]
-a_leg = matchup_data['red_fighter_leg_reach'].values[0]
-b_leg = matchup_data['blue_fighter_leg_reach'].values[0]
-
-# a_record, b_record, a_height, b_height, a_reach, b_reach, a_leg, b_leg = grab_matchup_data(url)
-
-
-##########     Get Fighter Info      ############# 
-
-# GET PICTURE URLS
-# fighter1_pic_url = "ufc.com/athlete/" + selected_fighter_1.replace(' ', '-').lower()
-# fighter2_pic_url = "ufc.com/athlete/" + selected_fighter_2.replace(' ', '-').lower()
-
-
-# # SCRAPE PICTURES FROM UFC.COM
-# def get_info(url):
-#     page = requests.get(url)
-#     return page.text
-
-# pagedata = get_info('https://' + fighter1_pic_url)
-# soup = BeautifulSoup(pagedata, 'html.parser')
-# fighter1_pic_url = soup.find('img', class_='hero-profile__image')['src']
-
-# page2data = get_info('https://' + fighter2_pic_url)
-# soup2 = BeautifulSoup(page2data, 'html.parser')
-# fighter2_pic_url = soup2.find('img', class_='hero-profile__image')['src']
-
+selected_matchup_url = next_event_data[next_event_data['fighter1'] == selected_fighter_1]['matchup_url'].values[0]
 
 
 def get_fighter_pic_url(selected_matchup_url, fighter_choice):
     fighter_last_name1 = selected_fighter_1.split(' ')[1]
     fighter_last_name1 = fighter_last_name1.upper()
+    fighter_first_name1 = selected_fighter_1.split(' ')[0]
+    fighter_first_name1 = fighter_first_name1.upper()
 
     fighter_last_name2 = selected_fighter_2.split(' ')[1]
     fighter_last_name2 = fighter_last_name2.upper()
+    fighter_first_name2 = selected_fighter_2.split(' ')[0]
+    fighter_first_name2 = fighter_first_name2.upper()
+
     driver = None
     if driver == None:
         driver = webdriver.Chrome('C:\\Users\\Travis\\OneDrive\\Data Science\\Personal_Projects\\Sports\\UFC_Prediction_V2\\chromedriver.exe')
@@ -468,15 +245,37 @@ def get_fighter_pic_url(selected_matchup_url, fighter_choice):
     fighter_img2 = fighter_img2.replace('athlete_detail_stance_thumbnail_full_body', 'athlete_matchup_stats_full_body')
     # end fighter_img at .png
     fighter_img2 = fighter_img2[:fighter_img2.find('.png') + 4]
+
     if fighter_choice == 1:
+        # save fighter_img1 to file
+        fighter1_img = requests.get(fighter_img1)
+        with open(home + 'fighter_images/' + selected_fighter_1 + '.png', 'wb') as f:
+            f.write(fighter1_img.content)
+        
         return fighter_img1
     else:
+        fighter2_img = requests.get(fighter_img2)
+        with open(home + 'fighter_images/' + selected_fighter_2 + '.png', 'wb') as f:
+            f.write(fighter2_img.content)
+        
         return fighter_img2
+    
 
-fighter1_img = get_fighter_pic_url(selected_matchup_url, fighter_choice=1)
-fighter2_img = get_fighter_pic_url(selected_matchup_url, fighter_choice=2)
+try:
+    # try loading fighter images
+    fighter1_img = Image.open(home + 'fighter_images/' + selected_fighter_1 + '.png')
+    fighter2_img = Image.open(home + 'fighter_images/' + selected_fighter_2 + '.png')
+except:
+    # if images don't exist, get them    
+    fighter1_img = get_fighter_pic_url(selected_matchup_url, fighter_choice=1)
+    fighter2_img = get_fighter_pic_url(selected_matchup_url, fighter_choice=2)
 
 ################ FIGHTER INFO ####################
+
+col1, col2 = st.columns(2)
+
+col1.image(fighter1_img, width=200)
+col2.image(fighter2_img, width=200)
 
 
 st.header('UFC Fight Prediction')
@@ -506,57 +305,57 @@ def odds_to_prob(odds):
         prob = str(round(prob, 3)) + '%'
         return prob
 
-# Assign Height and Length Values
-try:
-    dif = a_height - b_height
-    dif2 = a_reach - b_reach
-    dif3 = a_leg - b_leg
+# # Assign Height and Length Values
+# try:
+#     dif = a_height - b_height
+#     dif2 = a_reach - b_reach
+#     dif3 = a_leg - b_leg
 
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader(selected_fighter_1)
-        st.image(fighter1_img, height = 500, use_column_width=True)
-        st.metric(label = 'Vegas Odds', value=next_event['fighter1_odds'][next_event['fighter1'] == selected_fighter_1].values[0])
-        st.metric(label = 'Odds-Implied Probability', 
-                    value=odds_to_prob(next_event['fighter1_odds'][next_event['fighter1'] == selected_fighter_1].values[0]))
-        st.metric(label = 'Height', value=a_height, delta = dif)
-        st.metric(label = 'Reach', value=a_reach, delta = dif2)
-        st.metric(label = 'Leg Reach', value=a_leg, delta = dif3)
+#     col1, col2 = st.columns(2)
+#     with col1:
+#         st.subheader(selected_fighter_1)
+#         st.image(fighter1_img, height = 500, use_column_width=True)
+#         st.metric(label = 'Vegas Odds', value=next_event['fighter1_odds'][next_event['fighter1'] == selected_fighter_1].values[0])
+#         st.metric(label = 'Odds-Implied Probability', 
+#                     value=odds_to_prob(next_event['fighter1_odds'][next_event['fighter1'] == selected_fighter_1].values[0]))
+#         st.metric(label = 'Height', value=a_height, delta = dif)
+#         st.metric(label = 'Reach', value=a_reach, delta = dif2)
+#         st.metric(label = 'Leg Reach', value=a_leg, delta = dif3)
 
-    with col2:
-        st.subheader(selected_fighter_2)
-        st.image(fighter2_img, height = 500, use_column_width=True)
-        st.metric(label = 'Vegas Odds', value=next_event['fighter2_odds'][next_event['fighter2'] == selected_fighter_2].values[0])
-        st.metric(label = 'Odds-Implied Probability', 
-                    value=odds_to_prob(next_event['fighter2_odds'][next_event['fighter2'] == selected_fighter_2].values[0]))
-        st.metric(label = 'Height', value=b_height, delta = -dif)
-        st.metric(label = 'Reach', value=b_reach, delta = -dif2)
-        st.metric(label = 'Leg Reach', value=b_leg, delta = -dif3)
-except: 
-    st.markdown('THERES A PROBLEM WITH ONE OF THE FIGHTERS GIVEN METRICS... CALL CUSTOMER SUPPORT OR SOMETHING')
-
-
-st.write(next_eventz)
-
-next_eventz['event_date'] = pd.to_datetime(next_eventz['event_date']).dt.date
-d_o_e = next_eventz['event_date'].values[0]
-doe = d_o_e.strftime('%Y-%m-%d')
-# if fight is today
-today = datetime.today().strftime('%Y-%m-%d')
-
-fighter_urls = get_fighter_urls(next_eventz['event_url'].values[0])
-
-#
-nfd = pd.read_csv(home + 'final/next_fights/'+ doe + '.csv')
-#replace na with 0
-nfd.fillna(0, inplace=True)
+#     with col2:
+#         st.subheader(selected_fighter_2)
+#         st.image(fighter2_img, height = 500, use_column_width=True)
+#         st.metric(label = 'Vegas Odds', value=next_event['fighter2_odds'][next_event['fighter2'] == selected_fighter_2].values[0])
+#         st.metric(label = 'Odds-Implied Probability', 
+#                     value=odds_to_prob(next_event['fighter2_odds'][next_event['fighter2'] == selected_fighter_2].values[0]))
+#         st.metric(label = 'Height', value=b_height, delta = -dif)
+#         st.metric(label = 'Reach', value=b_reach, delta = -dif2)
+#         st.metric(label = 'Leg Reach', value=b_leg, delta = -dif3)
+# except: 
+#     st.markdown('THERES A PROBLEM WITH ONE OF THE FIGHTERS GIVEN METRICS... CALL CUSTOMER SUPPORT OR SOMETHING')
 
 
+# st.write(next_eventz)
 
-next_fight_df = nfd
-next_fight_df = next_fight_df.fillna(0)
-this_fight_df= next_fight_df[next_fight_df['Fighter_A'] == selected_fighter_1]
+# next_eventz['event_date'] = pd.to_datetime(next_eventz['event_date']).dt.date
+# d_o_e = next_eventz['event_date'].values[0]
+# doe = d_o_e.strftime('%Y-%m-%d')
+# # if fight is today
+# today = datetime.today().strftime('%Y-%m-%d')
+
+# fighter_urls = get_fighter_urls(next_eventz['event_url'].values[0])
+
+# #
+# nfd = pd.read_csv(home + 'final/next_fights/'+ doe + '.csv')
+# #replace na with 0
+# nfd.fillna(0, inplace=True)
+
+
+
+# next_fight_df = nfd
+# next_fight_df = next_fight_df.fillna(0)
+# this_fight_df= next_fight_df[next_fight_df['Fighter_A'] == selected_fighter_1]
 
 
 # put columns in proper order
@@ -1220,118 +1019,118 @@ proper_order = ['Fighter_A_Odds',
  'Dif_Opp_Avg_Ground_Strikes_land_per_round',
  'Dif_Opp_Avg_Ground_Strikes_att_per_round']
 
-this_fight_df['Dif_Odds'] = this_fight_df['Fighter_A_Odds'] - this_fight_df['Fighter_B_Odds']
+# this_fight_df['Dif_Odds'] = this_fight_df['Fighter_A_Odds'] - this_fight_df['Fighter_B_Odds']
 
-final_vect = this_fight_df[proper_order]
-
-
-# load model
-extra_trees = pickle.load(open('C:\\Users\\Travis\\OneDrive\\Data Science\\Personal_Projects\\Sports\\UFC_Prediction_V2\\models\\SVC.pkl', 'rb'))
-
-# Predict
-prediction = pd.DataFrame(extra_trees.predict(final_vect))
-prediction = prediction[0].values[0]
-
-if prediction == 1:
-    st.sidebar.header("Predicted Winner: " + selected_fighter_1)
-if prediction == 0:
-    st.sidebar.header("Predicted Winner: " + selected_fighter_2)
-
-probabilities = extra_trees.predict_proba(final_vect)
-prob_win = probabilities[0][1]
-prob_win = round(prob_win * 100,1)
-prob_lose = probabilities[0][0]
-prob_lose = round(prob_lose * 100,1)
-
-# Display sidebar probabilities
-st.sidebar.write("")
-st.sidebar.subheader("Model Predicted Win Probabilities:")
-st.sidebar.write(selected_fighter_1 + " : " + str(prob_win) + "%")
-st.sidebar.write(selected_fighter_2 + " : " + str(prob_lose)+ "%")
-st.sidebar.write("")
-
-st.sidebar.subheader('Expected Value of $10:')
-
-def american_odds_to_payout(odds):
-    # make sure odds are numerical
-    odds = float(odds)
-    if odds > 0:
-        return odds/100 + 1
-    else:
-        return 100/abs(odds) + 1
-
-vegas_odds_1 = next_event['fighter1_odds'][next_event['fighter1'] == selected_fighter_1].values[0]
-vegas_odds_2 = next_event['fighter2_odds'][next_event['fighter2'] == selected_fighter_2].values[0]
-
-american_payout1 = american_odds_to_payout(vegas_odds_1)
-american_payout2 = american_odds_to_payout(vegas_odds_2)
-
-# Expected Value
-ev1 = (american_payout1 * (prob_win/100 * 10)) - ((prob_lose/100) * 10 * american_payout2)
-st.sidebar.write(f' {selected_fighter_1} EV: {ev1.round()}')
+# final_vect = this_fight_df[proper_order]
 
 
-ev2 = ((prob_lose/100) * 10 * american_payout2) - (american_payout1 * (prob_win/100 * 10))
-st.sidebar.write("")
-st.sidebar.write(f' {selected_fighter_2} EV: {ev2.round()}')
+# # load model
+# extra_trees = pickle.load(open('C:\\Users\\Travis\\OneDrive\\Data Science\\Personal_Projects\\Sports\\UFC_Prediction_V2\\models\\SVC.pkl', 'rb'))
 
-if ev1 > ev2:
-    st.sidebar.subheader("A Bet on " + selected_fighter_1 + " is positive EV")
-else:
-    st.sidebar.subheader("A Bet on " + selected_fighter_2+ " is positive EV")
+# # Predict
+# prediction = pd.DataFrame(extra_trees.predict(final_vect))
+# prediction = prediction[0].values[0]
+
+# if prediction == 1:
+#     st.sidebar.header("Predicted Winner: " + selected_fighter_1)
+# if prediction == 0:
+#     st.sidebar.header("Predicted Winner: " + selected_fighter_2)
+
+# probabilities = extra_trees.predict_proba(final_vect)
+# prob_win = probabilities[0][1]
+# prob_win = round(prob_win * 100,1)
+# prob_lose = probabilities[0][0]
+# prob_lose = round(prob_lose * 100,1)
+
+# # Display sidebar probabilities
+# st.sidebar.write("")
+# st.sidebar.subheader("Model Predicted Win Probabilities:")
+# st.sidebar.write(selected_fighter_1 + " : " + str(prob_win) + "%")
+# st.sidebar.write(selected_fighter_2 + " : " + str(prob_lose)+ "%")
+# st.sidebar.write("")
+
+# st.sidebar.subheader('Expected Value of $10:')
+
+# def american_odds_to_payout(odds):
+#     # make sure odds are numerical
+#     odds = float(odds)
+#     if odds > 0:
+#         return odds/100 + 1
+#     else:
+#         return 100/abs(odds) + 1
+
+# vegas_odds_1 = next_event['fighter1_odds'][next_event['fighter1'] == selected_fighter_1].values[0]
+# vegas_odds_2 = next_event['fighter2_odds'][next_event['fighter2'] == selected_fighter_2].values[0]
+
+# american_payout1 = american_odds_to_payout(vegas_odds_1)
+# american_payout2 = american_odds_to_payout(vegas_odds_2)
+
+# # Expected Value
+# ev1 = (american_payout1 * (prob_win/100 * 10)) - ((prob_lose/100) * 10 * american_payout2)
+# st.sidebar.write(f' {selected_fighter_1} EV: {ev1.round()}')
+
+
+# ev2 = ((prob_lose/100) * 10 * american_payout2) - (american_payout1 * (prob_win/100 * 10))
+# st.sidebar.write("")
+# st.sidebar.write(f' {selected_fighter_2} EV: {ev2.round()}')
+
+# if ev1 > ev2:
+#     st.sidebar.subheader("A Bet on " + selected_fighter_1 + " is positive EV")
+# else:
+#     st.sidebar.subheader("A Bet on " + selected_fighter_2+ " is positive EV")
 
 
 
-###########        MATCHUPS      ###############
+# ###########        MATCHUPS      ###############
 
 
-st.sidebar.header('Selected UFC Event: '+ selected_event)
+# st.sidebar.header('Selected UFC Event: '+ selected_event)
 
-ne = next_event.rename(columns={'fighter1': 'Fighter #1', 'fighter2': 'Fighter #2', 
-                                'weightclass': 'Weightclass', 'fighter1_odds': 'Fighter #1 Odds', 
-                                'fighter2_odds': 'Fighter #2 Odds'})
-colz = ['Fighter #1', 'Fighter #2', ]
-ne = ne[colz]
-st.sidebar.table(ne.style.format({'Fighter #1 Odds': '{:.2f}', 'Fighter #2 Odds': '{:.2f}'}))
+# ne = next_event.rename(columns={'fighter1': 'Fighter #1', 'fighter2': 'Fighter #2', 
+#                                 'weightclass': 'Weightclass', 'fighter1_odds': 'Fighter #1 Odds', 
+#                                 'fighter2_odds': 'Fighter #2 Odds'})
+# colz = ['Fighter #1', 'Fighter #2', ]
+# ne = ne[colz]
+# st.sidebar.table(ne.style.format({'Fighter #1 Odds': '{:.2f}', 'Fighter #2 Odds': '{:.2f}'}))
 
-st.header('Important Features')
-st.write('Peruse the model features below')
-
-
-num_cols = final_vect.select_dtypes(include=['float64', 'int64']).columns
-# round all float columns to 2 decimal places
-final_vect_t = final_vect.copy()
-final_vect_t[num_cols] = final_vect_t[num_cols].round(2)
-final_vect_t = final_vect_t.T
-final_vect_t.columns = ['Value']
-
-st.dataframe(final_vect_t)
-
-############   ALL FEATURES  ############
+# st.header('Important Features')
+# st.write('Peruse the model features below')
 
 
-#cols = []
+# num_cols = final_vect.select_dtypes(include=['float64', 'int64']).columns
+# # round all float columns to 2 decimal places
+# final_vect_t = final_vect.copy()
+# final_vect_t[num_cols] = final_vect_t[num_cols].round(2)
+# final_vect_t = final_vect_t.T
+# final_vect_t.columns = ['Value']
 
-#a_cols = [n for n in cols if n.startswith('A')]
-#b_cols = [n for n in cols if n.startswith('B')]
+# st.dataframe(final_vect_t)
 
-#a_cols_df = final_vect[a_cols]
-#b_cols_df = final_vect[b_cols]
-# Make new df with a cols as rows in one column and b cols as rows in the other
-#df = pd.DataFrame(columns=[selected_fighter_1, selected_fighter_2])
-# make column values the values from a_cols_df and b_cols_df
-#df[selected_fighter_1] = a_cols_df.values[0]
-#df[selected_fighter_2] = b_cols_df.values[0]
-# round to 1
-#df = df.round(1)
-# rows are the index of a_cols_df
-#df.index = a_cols
-# rename indexes
-#df.index = ['Total Strikes (Average)', 'Total Significant Strikes (Average)', 'Distance Strikes (Average)', 'Head Strikes (Average)', 'Ground Strikes Percent (Median)',
-#            'Ground Strikes Percent (Minimum)', 'Leg Reach (inches)', 'Control Time (Average)']
+# ############   ALL FEATURES  ############
 
-# only display one decimal place
-#st.table(df.style.highlight_max(axis = 1, color = 'darkgreen').format("{:.1f}"))
+
+# #cols = []
+
+# #a_cols = [n for n in cols if n.startswith('A')]
+# #b_cols = [n for n in cols if n.startswith('B')]
+
+# #a_cols_df = final_vect[a_cols]
+# #b_cols_df = final_vect[b_cols]
+# # Make new df with a cols as rows in one column and b cols as rows in the other
+# #df = pd.DataFrame(columns=[selected_fighter_1, selected_fighter_2])
+# # make column values the values from a_cols_df and b_cols_df
+# #df[selected_fighter_1] = a_cols_df.values[0]
+# #df[selected_fighter_2] = b_cols_df.values[0]
+# # round to 1
+# #df = df.round(1)
+# # rows are the index of a_cols_df
+# #df.index = a_cols
+# # rename indexes
+# #df.index = ['Total Strikes (Average)', 'Total Significant Strikes (Average)', 'Distance Strikes (Average)', 'Head Strikes (Average)', 'Ground Strikes Percent (Median)',
+# #            'Ground Strikes Percent (Minimum)', 'Leg Reach (inches)', 'Control Time (Average)']
+
+# # only display one decimal place
+# #st.table(df.style.highlight_max(axis = 1, color = 'darkgreen').format("{:.1f}"))
 
 
 st.header('Links for More Fighter Information:')
