@@ -274,8 +274,8 @@ except:
 
 col1, col2 = st.columns(2)
 
-col1.image(fighter1_img, width=200)
-col2.image(fighter2_img, width=200)
+col1.image(fighter1_img, height = 200, use_column_width=True)
+col2.image(fighter2_img, height = 200, use_column_width=True)
 
 
 st.header('UFC Fight Prediction')
