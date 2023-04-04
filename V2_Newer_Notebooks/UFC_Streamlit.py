@@ -1,9 +1,8 @@
-# cd OneDrive/Data Science/Personal_Projects/Sports/UFC_Prediction/notebooks/final_notebooks
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-import sqlite3
 import seaborn as sns
 from matplotlib.pyplot import figure
 from bs4 import BeautifulSoup
@@ -136,7 +135,6 @@ def get_next_event_ufcstats():
     data = pd.DataFrame({'event_title': [event_title], 'event_url': [event1_url], 'event_date': [event_date]})
     return data
 
-
 # get fighter urls from UFCStats.com using BS
 def get_fighter_urls(event_details_url):
     page = requests.get(event_details_url)
@@ -168,17 +166,15 @@ def is_saturday():
     else:
         return False
 
-# if it is a saturday, get the current event, otherwise, get the next event
 
 # Get next event from ufcstats.com
 next_eventz = get_next_event_ufcstats()
 
 
-##########           DATA        ################
-
+# load big dataframe
 data = pd.read_csv(home + '/final/aggregates/Double_Fights_DF_V14.csv')
 
-##########           GET EVENTS       ################
+
 
 # make sure events have fight info. If not, disregard that event
 next = get_next_events2('https://www.ufc.com/events')
@@ -1206,7 +1202,6 @@ st.sidebar.write('https://www.ufc.com/search?query=' + first_name2 + '+' + last_
 st.sidebar.subheader('Sherdog Stats')
 st.sidebar.write('https://www.sherdog.com/search.php?q=' + first_name1 + '+' + last_name1)
 st.sidebar.write('https://www.sherdog.com/search.php?q=' + first_name2 + '+' + last_name2)
-
 
 
 
