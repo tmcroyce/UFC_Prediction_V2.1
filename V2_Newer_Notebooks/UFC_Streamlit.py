@@ -243,71 +243,177 @@ next_event['fight_number'] = data_fmid[:len(next_event)]
 next_event['matchup_url'] = event_url +'#' + next_event['fight_number'].astype(str)
 selected_matchup_url = next_event['matchup_url'][next_event['fighter1'] == selected_fighter_1].values[0]
 
+st.table(next_event)
+
 st.write(' FOR EDIT -- selected_matchup_url: ' + selected_matchup_url)
 
-# Function to scrape UFC fight data
-def grab_matchup_data(matchup_url):
-    response = requests.get(matchup_url)
-    soup = BeautifulSoup(response.text, 'html.parser').text
-    soup = soup.replace('   ', '').replace('\n', '')
+# get iframe srcs for each matchup
+matchup_urls = []
+for i in range(0, len(next_event)):
+    matchup_urls.append(next_event['matchup_url'][i])
 
-    od = soup.find('Odds')
-    rec = soup.find('Record')
-    a_record = soup[od + 5 : rec - 2]
-    last_fight = soup.find("Last Fight")
-    b_record = soup[rec + 7 : last_fight - 5]
-
-    hite = soup.find('Height')
-    f = soup.find("' ")
-    a_height = soup[f -1 : hite - 2]
-    # find second occurance of f
-    f2 = soup.find("' ", f + 1)
-    b_height = soup[hite + 7 : f2+5]
-
-    # Find reach
-    reach = soup.find('Reach')
-    # find second occurance of "LB"
-    lb = soup.find('LB')
-    lb2 = soup.find('LB', lb + 1)
-    a_reach = soup[lb2 +5 : reach ]
-    inn = soup.find("in ")
-    # get the word after reach
-    big_space = soup.find('  ', reach + 1)
-    b_reach = soup[reach + 6 : big_space]
-
-    # Find Leg Reach
-    leg = soup.find('Leg Reach')
-    big_space2 = soup.find('  ', big_space + 1)
-    a_leg = soup[big_space2 + 2 : leg]
-    big_space4 = soup.find('  ', big_space2 + 2)
-    b_leg = soup[leg + 10 : leg + 17]
-
-    a_record = a_record.strip()
-    b_record = b_record.strip()
-
-    a_height_ft = float(a_height[:1])
-    a_height_in = float(a_height[3:].replace("'", "").replace('"', ''))
-    a_height = (a_height_ft * 12) + a_height_in 
+# get iframe srcs for each matchup
+iframe_srcs = []
+for i in range(0, len(matchup_urls)):   
+    driver = webdriver.Chrome(executable_path=home + '/chromedriver')
+    # load matchup page with selenium
+    driver.get(matchup_urls[i])
+    # get iframe src
+    iframe_src = driver.find_element_by_tag_name('iframe').get_attribute('src')
+    iframe_srcs.append(iframe_src)
 
 
-    b_height_ft = float(b_height[:1])
-    b_height_in = float(b_height[3:].replace("'", "").replace('"', ''))
-    b_height = (b_height_ft * 12) + b_height_in
+st.table(iframe_srcs)
 
-    a_reach = float(a_reach.replace(' in', '').strip())
-    b_reach = float(b_reach.replace(' in', '').strip())
 
-    a_leg = float(a_leg.replace(' in', '').strip())
-    b_leg = float(b_leg.replace(' in', '').strip())
+
+
+def grab_matchup_data(iframe_src):
+        # Make a request to the iframe source URL to load its contents
+    iframe_response = requests.get(iframe_src)
+    iframe_soup = BeautifulSoup(iframe_response.text, 'html.parser')
+
+    # get fighter links
+    fighter_links = []
+    for link in iframe_soup.find_all('a', href=True):
+        if '/athlete/' in link['href']:
+            fighter_links.append(link['href'])
+
+    # first fighter link is red
+    red_fighter_link = fighter_links[0]
+    blue_fighter_link = fighter_links[1]
+
+    # get fighter names from links
+    red_fighter_name = red_fighter_link.split('/')[-1]
+    blue_fighter_name = blue_fighter_link.split('/')[-1]
+    # replace - with space
+    red_fighter_name = red_fighter_name.replace('-', ' ')
+    blue_fighter_name = blue_fighter_name.replace('-', ' ')
+
+
+    # Find the 'c-stat-group__container' element, which contains the relevant data
+    stat_group_container = iframe_soup.find('div', class_='c-stat-group__container')
+
+    # Extract all text from the 'c-stat-group__container' element
+    texts = []
+    for element in stat_group_container.find_all(recursive=True):
+        if element.string:
+            texts.append(element.string.strip())
+
+    # Print the extracted text
+    for text in texts:
+        print(text)
+
+    # Assign the extracted text to variables
+    red_fighter_record = texts[0]
+    blue_fighter_record = texts[2]
+    red_fighter_last_fight = texts[3]
+    blue_fighter_last_fight = texts[5]
+    red_fighter_country = texts[6]
+    blue_fighter_country = texts[8]
+    red_fighter_height = texts[9]
+    blue_fighter_height = texts[11]
+    red_fighter_weight = texts[12]
+    blue_fighter_weight = texts[14]
+    red_fighter_reach = texts[15]
+    blue_fighter_reach = texts[17]
+    red_fighter_leg_reach = texts[18]
+    blue_fighter_leg_reach = texts[20]
+
+    # turn to df
+    data = {'red_fighter_name': red_fighter_name, 'blue_fighter_name': blue_fighter_name,
+            'red_fighter_link': red_fighter_link, 'blue_fighter_link': blue_fighter_link,
+            'red_fighter_record': red_fighter_record, 'blue_fighter_record': blue_fighter_record,
+            'red_fighter_last_fight': red_fighter_last_fight, 'blue_fighter_last_fight': blue_fighter_last_fight,
+            'red_fighter_country': red_fighter_country, 'blue_fighter_country': blue_fighter_country,
+            'red_fighter_height': red_fighter_height, 'blue_fighter_height': blue_fighter_height,
+            'red_fighter_weight': red_fighter_weight, 'blue_fighter_weight': blue_fighter_weight,
+            'red_fighter_reach': red_fighter_reach, 'blue_fighter_reach': blue_fighter_reach,
+            'red_fighter_leg_reach': red_fighter_leg_reach, 'blue_fighter_leg_reach': blue_fighter_leg_reach}
+
+    return pd.DataFrame(data, index=[0])
+
+
+
+# # Function to scrape UFC fight data
+# def grab_matchup_data(matchup_url):
+#     response = requests.get(matchup_url)
+#     soup = BeautifulSoup(response.text, 'html.parser').text
+#     soup = soup.replace('   ', '').replace('\n', '')
+
+#     od = soup.find('Odds')
+#     rec = soup.find('Record')
+#     a_record = soup[od + 5 : rec - 2]
+#     last_fight = soup.find("Last Fight")
+#     b_record = soup[rec + 7 : last_fight - 5]
+
+#     hite = soup.find('Height')
+#     f = soup.find("' ")
+#     a_height = soup[f -1 : hite - 2]
+#     # find second occurance of f
+#     f2 = soup.find("' ", f + 1)
+#     b_height = soup[hite + 7 : f2+5]
+
+#     # Find reach
+#     reach = soup.find('Reach')
+#     # find second occurance of "LB"
+#     lb = soup.find('LB')
+#     lb2 = soup.find('LB', lb + 1)
+#     a_reach = soup[lb2 +5 : reach ]
+#     inn = soup.find("in ")
+#     # get the word after reach
+#     big_space = soup.find('  ', reach + 1)
+#     b_reach = soup[reach + 6 : big_space]
+
+#     # Find Leg Reach
+#     leg = soup.find('Leg Reach')
+#     big_space2 = soup.find('  ', big_space + 1)
+#     a_leg = soup[big_space2 + 2 : leg]
+#     big_space4 = soup.find('  ', big_space2 + 2)
+#     b_leg = soup[leg + 10 : leg + 17]
+
+#     a_record = a_record.strip()
+#     b_record = b_record.strip()
+
+#     a_height_ft = float(a_height[:1])
+#     a_height_in = float(a_height[3:].replace("'", "").replace('"', ''))
+#     a_height = (a_height_ft * 12) + a_height_in 
+
+
+#     b_height_ft = float(b_height[:1])
+#     b_height_in = float(b_height[3:].replace("'", "").replace('"', ''))
+#     b_height = (b_height_ft * 12) + b_height_in
+
+#     a_reach = float(a_reach.replace(' in', '').strip())
+#     b_reach = float(b_reach.replace(' in', '').strip())
+
+#     a_leg = float(a_leg.replace(' in', '').strip())
+#     b_leg = float(b_leg.replace(' in', '').strip())
 
     
-    return a_record, b_record, a_height, b_height, a_reach, b_reach, a_leg, b_leg
+#     return a_record, b_record, a_height, b_height, a_reach, b_reach, a_leg, b_leg
 
-url = 'https://www.ufc.com/matchup/' + str(selected_event_secret_number) + '/' + next_event[next_event['fighter1'] == selected_fighter_1]['fight_number'].values[0]
+url = ('https://www.ufc.com/matchup/' + str(selected_event_secret_number) + '/' + 
+        next_event[next_event['fighter1'] == selected_fighter_1]['fight_number'].values[0] +
+        '/pre')
 
 st.write('ufc_matchup_url_xtra: ' + url)
 
-a_record, b_record, a_height, b_height, a_reach, b_reach, a_leg, b_leg = grab_matchup_data(url)
+
+matchup_data = grab_matchup_data(url)
+
+a_record = matchup_data['red_fighter_record'].values[0]
+b_record = matchup_data['blue_fighter_record'].values[0]
+a_height = matchup_data['red_fighter_height'].values[0]
+b_height = matchup_data['blue_fighter_height'].values[0]
+a_weight = matchup_data['red_fighter_weight'].values[0]
+b_weight = matchup_data['blue_fighter_weight'].values[0]
+a_reach = matchup_data['red_fighter_reach'].values[0]
+b_reach = matchup_data['blue_fighter_reach'].values[0]
+a_leg = matchup_data['red_fighter_leg_reach'].values[0]
+b_leg = matchup_data['blue_fighter_leg_reach'].values[0]
+
+# a_record, b_record, a_height, b_height, a_reach, b_reach, a_leg, b_leg = grab_matchup_data(url)
 
 
 ##########     Get Fighter Info      ############# 
