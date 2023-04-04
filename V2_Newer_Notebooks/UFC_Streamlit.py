@@ -30,6 +30,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
+st.set_page_config(page_title='UFC Prediction', page_icon=None, layout="wide", initial_sidebar_state="auto" )
+
+
 
 home = 'C:/Users/Travis/OneDrive/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/data/'
 home2 = 'C:/Users/Travis/OneDrive/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/'
@@ -188,8 +191,7 @@ except:
     st.write('No data for ' + next_event_title)
 
 ########           Select Next Event    ################
-# import Image capabilities
-from PIL import Image
+
 
 
 event = next_event_title
@@ -197,14 +199,15 @@ selected_event = event
 
 fight = st.sidebar.selectbox('Select Fight', next_event_data['fighter1'] + ' vs. ' + next_event_data['fighter2'])
 
+ufc_data = next_event_data[next_event_data['fighter1'] + ' vs. ' + next_event_data['fighter2'] == fight]
+
 # get fight number selected
 ## Get Names ##
-
 selected_fighter_1 = fight.split(' vs. ')[0]
 selected_fighter_2 = fight.split(' vs. ')[1].strip()
 
 
-st.table(next_event_data)
+#st.dataframe(next_event_data)
 
 
 selected_matchup_url = next_event_data[next_event_data['fighter1'] == selected_fighter_1]['matchup_url'].values[0]
@@ -252,45 +255,96 @@ def get_fighter_pic_url(selected_matchup_url, fighter_choice):
         with open(home + 'fighter_images/' + selected_fighter_1 + '.png', 'wb') as f:
             f.write(fighter1_img.content)
         
-        return fighter_img1
+        #return fighter_img1
     else:
         fighter2_img = requests.get(fighter_img2)
         with open(home + 'fighter_images/' + selected_fighter_2 + '.png', 'wb') as f:
             f.write(fighter2_img.content)
         
-        return fighter_img2
+        #return fighter_img2
     
 
-try:
-    # try loading fighter images
-    fighter1_img = Image.open(home + 'fighter_images/' + selected_fighter_1 + '.png')
-    fighter2_img = Image.open(home + 'fighter_images/' + selected_fighter_2 + '.png')
-except:
-    # if images don't exist, get them    
-    fighter1_img = get_fighter_pic_url(selected_matchup_url, fighter_choice=1)
-    fighter2_img = get_fighter_pic_url(selected_matchup_url, fighter_choice=2)
+# try loading fighter images
+fighter1_img = home + 'fighter_images/' + str(selected_fighter_1) + '.png'
+fighter2_img = home + 'fighter_images/' + str(selected_fighter_2) + '.png'
 
 ################ FIGHTER INFO ####################
 
-col1, col2 = st.columns(2)
+from PIL import Image
+try:
+    fighter1_final_image = Image.open(fighter1_img)
+except:
+    fighter1_final_image = Image.open(home + 'fighter_images/unknown_fighter.png')
+try:
+    fighter2_final_image = Image.open(fighter2_img)
+except:
+    fighter2_final_image = Image.open(home + 'fighter_images/unknown_fighter.png')
 
-col1.image(fighter1_img, height = 200, use_column_width=True)
-col2.image(fighter2_img, height = 200, use_column_width=True)
 
 
-st.header('UFC Fight Prediction')
-st.write('Choose a fight from the sidebar to see the prediction.')
 
-f1 = data[data['Fighter_A'] == selected_fighter_1]
-f2 = data[data['Fighter_A'] == selected_fighter_2]
+col1, col2, col3, col4 = st.columns([.3, .2,.2, .3])
 
-# transpose f1
-cols = ['Fighter_A', 'A_Height', 'A_Reach', 'A_Leg_Reach']
-f11 = f1[cols].reset_index().drop(['index'], axis=1)
-# rename columns
-f11.columns = ['Fighter', 'Height', 'Reach', 'Leg_Reach']
-f22 = f2[cols].reset_index().drop(['index'], axis=1)
-f22.columns = ['Fighter', 'Height', 'Reach', 'Leg_Reach']
+col1.header(selected_fighter_1)
+col4.header(selected_fighter_2)
+col1.image(fighter1_final_image, width = 250)
+col4.image(fighter2_final_image, width = 250)
+
+player1_height = ufc_data['red_height'].values[0]
+player1_reach = ufc_data['red_reach'].values[0]
+player1_leg_reach = ufc_data['red_legreach'].values[0]
+player1_winby_ko = ufc_data['red_win_by_ko_percent'].values[0]
+player1_winby_sub = ufc_data['red_win_by_sub_percent'].values[0]
+player1_winby_dec = ufc_data['red_win_by_dec_percent'].values[0]
+player1_avg_fighttime = ufc_data['red_avg_fight_time'].values[0]
+player1_knockdowns_per_15 = ufc_data['red_knockdowns_per_15_min'].values[0]
+player1_take_downs_per_15 = ufc_data['red_takedowns_landed_per_15_min'].values[0]
+player1_takedown_accuracy = ufc_data['red_takedown_accuracy'].values[0]
+player1_takedown_defense = ufc_data['red_takedown_defense'].values[0]
+player1_sub_attempts_per_15 = ufc_data['red_submissions_attempts_per_15_min'].values[0]
+
+
+player2_height = ufc_data['blue_height'].values[0]
+player2_reach = ufc_data['blue_reach'].values[0]
+player2_leg_reach = ufc_data['blue_legreach'].values[0]
+player2_winby_ko = ufc_data['blue_win_by_ko_percent'].values[0]
+player2_winby_sub = ufc_data['blue_win_by_sub_percent'].values[0]
+player2_winby_dec = ufc_data['blue_win_by_dec_percent'].values[0]
+player2_avg_fighttime = ufc_data['blue_avg_fight_time'].values[0]
+player2_knockdowns_per_15 = ufc_data['blue_knockdowns_per_15_min'].values[0]
+player2_take_downs_per_15 = ufc_data['blue_takedowns_landed_per_15_min'].values[0]
+player2_takedown_accuracy = ufc_data['blue_takedown_accuracy'].values[0]
+player2_takedown_defense = ufc_data['blue_takedown_defense'].values[0]
+player2_sub_attempts_per_15 = ufc_data['blue_submissions_attempts_per_15_min'].values[0]
+
+
+# add metrics to cols 2 and 3
+col2.metric('Height', player1_height)
+col2.metric('Reach', player1_reach)
+col2.metric('Leg Reach', player1_leg_reach)
+col2.metric('Win by KO', player1_winby_ko)
+col2.metric('Win by Sub', player1_winby_sub)
+col2.metric('Win by Dec', player1_winby_dec)
+col2.metric('Avg Fight Time', player1_avg_fighttime)
+col2.metric('Knockdowns per 15', player1_knockdowns_per_15)
+col2.metric('Takedowns per 15', player1_take_downs_per_15)
+col2.metric('Takedown Accuracy', player1_takedown_accuracy)
+col2.metric('Takedown Defense', player1_takedown_defense)
+col2.metric('Sub Attempts per 15', player1_sub_attempts_per_15)
+
+col3.metric('Height', player2_height)
+col3.metric('Reach', player2_reach)
+col3.metric('Leg Reach', player2_leg_reach)
+col3.metric('Win by KO', player2_winby_ko)
+col3.metric('Win by Sub', player2_winby_sub)
+col3.metric('Win by Dec', player2_winby_dec)
+col3.metric('Avg Fight Time', player2_avg_fighttime)
+col3.metric('Knockdowns per 15', player2_knockdowns_per_15)
+col3.metric('Takedowns per 15', player2_take_downs_per_15)
+col3.metric('Takedown Accuracy', player2_takedown_accuracy)
+col3.metric('Takedown Defense', player2_takedown_defense)
+col3.metric('Sub Attempts per 15', player2_sub_attempts_per_15)
+
 
 
 # function to convert vegas odds to implied probability
@@ -1133,25 +1187,25 @@ proper_order = ['Fighter_A_Odds',
 # #st.table(df.style.highlight_max(axis = 1, color = 'darkgreen').format("{:.1f}"))
 
 
-st.header('Links for More Fighter Information:')
-st.subheader('Wikipedia')
-st.write('Follow links for fighter Wikipedia pages')
+st.sidebar.header('Links for More Fighter Information:')
+st.sidebar.subheader('Wikipedia')
+st.sidebar.write('Follow links for fighter Wikipedia pages')
 
 first_name1 = selected_fighter_1.split()[0]
 last_name1 = selected_fighter_1.split()[1]
-st.write('https://en.wikipedia.org/wiki/' + first_name1 + '_' + last_name1)
+st.sidebar.write('https://en.wikipedia.org/wiki/' + first_name1 + '_' + last_name1)
 
 first_name2 = selected_fighter_2.split()[0]
 last_name2 = selected_fighter_2.split()[1]
-st.write('https://en.wikipedia.org/wiki/' + first_name2 + '_' + last_name2)
+st.sidebar.write('https://en.wikipedia.org/wiki/' + first_name2 + '_' + last_name2)
 
-st.subheader('UFC.COM')
-st.write('https://www.ufc.com/search?query=' + first_name1 + '+' + last_name1)
-st.write('https://www.ufc.com/search?query=' + first_name2 + '+' + last_name2)
+st.sidebar.subheader('UFC.COM')
+st.sidebar.write('https://www.ufc.com/search?query=' + first_name1 + '+' + last_name1)
+st.sidebar.write('https://www.ufc.com/search?query=' + first_name2 + '+' + last_name2)
 
-st.subheader('Sherdog Stats')
-st.write('https://www.sherdog.com/search.php?q=' + first_name1 + '+' + last_name1)
-st.write('https://www.sherdog.com/search.php?q=' + first_name2 + '+' + last_name2)
+st.sidebar.subheader('Sherdog Stats')
+st.sidebar.write('https://www.sherdog.com/search.php?q=' + first_name1 + '+' + last_name1)
+st.sidebar.write('https://www.sherdog.com/search.php?q=' + first_name2 + '+' + last_name2)
 
 
 
