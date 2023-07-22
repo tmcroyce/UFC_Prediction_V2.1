@@ -33,8 +33,8 @@ st.set_page_config(page_title='UFC Prediction', page_icon=None, layout="wide", i
 
 
 
-home = 'C:/Users/Travis/OneDrive/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/data/'
-home2 = 'C:/Users/Travis/OneDrive/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/'
+home = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/data/'
+home2 = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/'
 os.chdir(home)
 
 #------------------------------  Define Functions -----------------------------------------------------------------
