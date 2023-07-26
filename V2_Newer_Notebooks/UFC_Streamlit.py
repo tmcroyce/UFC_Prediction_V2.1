@@ -33,8 +33,8 @@ st.set_page_config(page_title='UFC Prediction', page_icon=None, layout="wide", i
 
 
 
-home = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/data/'
-home2 = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/'
+home = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/data'
+home2 = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2'
 os.chdir(home)
 
 #------------------------------  Define Functions -----------------------------------------------------------------
@@ -177,7 +177,7 @@ data = pd.read_csv(home + '/final/aggregates/Double_Fights_DF_V14.csv')
 
 
 # make sure events have fight info. If not, disregard that event
-next = get_next_events2('https://www.ufc.com/events')
+next = get_next_events('https://www.ufc.com/events')
 next_event_title = next['event_title'][0]
 
 # load next event data, if it exists
@@ -186,10 +186,8 @@ try:
 except:
     st.write('No data for ' + next_event_title)
 
+
 ########           Select Next Event    ################
-
-
-
 event = next_event_title
 selected_event = event
 
