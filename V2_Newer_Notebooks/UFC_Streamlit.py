@@ -188,6 +188,7 @@ except:
 
 
 ########           Select Next Event    ################
+
 event = next_event_title
 selected_event = event
 
@@ -195,11 +196,13 @@ fight = st.sidebar.selectbox('Select Fight', next_event_data['fighter1'] + ' vs.
 
 ufc_data = next_event_data[next_event_data['fighter1'] + ' vs. ' + next_event_data['fighter2'] == fight]
 
-# get fight number selected
 ## Get Names ##
 selected_fighter_1 = fight.split(' vs. ')[0]
 selected_fighter_2 = fight.split(' vs. ')[1].strip()
 
+# get last names
+selected_fighter_1_last_name = selected_fighter_1.split(' ')[-1]
+selected_fighter_2_last_name = selected_fighter_2.split(' ')[-1]
 
 #st.dataframe(next_event_data)
 
@@ -209,16 +212,21 @@ selected_matchup_url = next_event_data[next_event_data['fighter1'] == selected_f
 # Grab fighter pictures
 def get_fighter_pic_url(selected_matchup_url, fighter_choice):
     # Split the selected fighter names into first and last names
-    fighter_last_name1 = selected_fighter_1.split(' ')[1]
+    fighter_last_name1 = selected_fighter_1.split(' ')[-1]
     fighter_last_name1 = fighter_last_name1.upper()
+    # drop any ' in the name
+    fighter_last_name1 = fighter_last_name1.replace("'", '')
     fighter_first_name1 = selected_fighter_1.split(' ')[0]
     fighter_first_name1 = fighter_first_name1.upper()
 
-    fighter_last_name2 = selected_fighter_2.split(' ')[1]
+    fighter_last_name2 = selected_fighter_2.split(' ')[-1]
     fighter_last_name2 = fighter_last_name2.upper()
+    # drop any ' in the name
+    fighter_last_name2 = fighter_last_name2.replace("'", '')
     fighter_first_name2 = selected_fighter_2.split(' ')[0]
     fighter_first_name2 = fighter_first_name2.upper()
 
+    # Call 
     driver = None
     if driver == None:
         # Set up the Selenium WebDriver
@@ -265,19 +273,27 @@ def get_fighter_pic_url(selected_matchup_url, fighter_choice):
         # Return the URL of the second fighter's image
         return fighter_img2
 
-# Call the function
-get_fighter_pic_url(selected_matchup_url, 1)
-get_fighter_pic_url(selected_matchup_url, 2)    
-
-# try loading fighter images
-fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
-fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
 
 
+# try loading fighter images. If fail, call function
+try:
+    fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
+    # open image
+    fighter1_final_image = Image.open(fighter1_img)
+    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
+    # open image
+    fighter2_final_image = Image.open(fighter2_img)
+except:
+    # Call the function
+    get_fighter_pic_url(selected_matchup_url, 1)
+    get_fighter_pic_url(selected_matchup_url, 2)  
+    fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
+    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'  
 
 ################ FIGHTER INFO ####################
 
 from PIL import Image
+
 try:
     fighter1_final_image = Image.open(fighter1_img)
 except:
@@ -289,13 +305,12 @@ except:
 
 
 
-
-col1, col2, col3, col4 = st.columns([.3, .2,.2, .3])
+col0,  col1, col2, col3, col4, col5= st.columns([.1, .2, .2,.2, .2, .1])
 
 col1.header(selected_fighter_1)
 col4.header(selected_fighter_2)
-col1.image(fighter1_final_image, width = 250)
-col4.image(fighter2_final_image, width = 250)
+col1.image(fighter1_final_image, use_column_width=True)
+col4.image(fighter2_final_image, use_column_width=True)
 
 player1_height = ufc_data['red_height'].values[0]
 player1_reach = ufc_data['red_reach'].values[0]
@@ -324,11 +339,33 @@ player2_takedown_accuracy = ufc_data['blue_takedown_accuracy'].values[0]
 player2_takedown_defense = ufc_data['blue_takedown_defense'].values[0]
 player2_sub_attempts_per_15 = ufc_data['blue_submissions_attempts_per_15_min'].values[0]
 
+def height_to_inches(height):
+    height = height.split("'")
+    # drop the " from the inches
+    height[1] = height[1].replace('"', '')
+    feet = int(height[0])
+    inches = int(height[1])
+    total_inches = feet*12 + inches
+    return total_inches
 
 # add metrics to cols 2 and 3
 col2.metric('Height', player1_height)
 col2.metric('Reach', player1_reach)
 col2.metric('Leg Reach', player1_leg_reach)
+# calculate body size as height - leg_reach
+# height to inches
+player1_height_inches = height_to_inches(player1_height)
+col2.metric('Height (Inches)', player1_height_inches)
+player1_height = float(player1_height_inches)
+# drop ' in' from leg reach
+player1_leg_reach = player1_leg_reach.replace(' in', '')
+player1_leg_reach = float(player1_leg_reach)
+player1_body_size = player1_height - player1_leg_reach
+
+# fix reach by dropping ' in' and converting to float
+player1_reach = player1_reach.replace(' in', '')
+player1_reach = float(player1_reach)
+col2.metric('Upper Body Length', player1_body_size)
 col2.metric('Win by KO', player1_winby_ko)
 col2.metric('Win by Sub', player1_winby_sub)
 col2.metric('Win by Dec', player1_winby_dec)
@@ -342,6 +379,20 @@ col2.metric('Sub Attempts per 15', player1_sub_attempts_per_15)
 col3.metric('Height', player2_height)
 col3.metric('Reach', player2_reach)
 col3.metric('Leg Reach', player2_leg_reach)
+# calculate body size as height - leg_reach
+# height to inches
+player2_height_inches = height_to_inches(player2_height)
+col3.metric('Height (Inches)', player2_height_inches)
+player2_height = float(player2_height_inches)
+# drop ' in' from leg reach
+player2_leg_reach = player2_leg_reach.replace(' in', '')
+player2_leg_reach = float(player2_leg_reach)
+player2_body_size = player2_height - player2_leg_reach
+
+# fix reach by dropping ' in' and converting to float
+player2_reach = player2_reach.replace(' in', '')
+player2_reach = float(player2_reach)
+col3.metric('Upper Body Length', player2_body_size)
 col3.metric('Win by KO', player2_winby_ko)
 col3.metric('Win by Sub', player2_winby_sub)
 col3.metric('Win by Dec', player2_winby_dec)
@@ -351,6 +402,41 @@ col3.metric('Takedowns per 15', player2_take_downs_per_15)
 col3.metric('Takedown Accuracy', player2_takedown_accuracy)
 col3.metric('Takedown Defense', player2_takedown_defense)
 col3.metric('Sub Attempts per 15', player2_sub_attempts_per_15)
+
+fighter_metrics = pd.DataFrame({
+    'metric': ['Height', 'Reach', 'Leg Reach', 'Height (Inches)', 'Upper Body Length', 'Win by KO', 'Win by Sub', 'Win by Dec', 'Avg Fight Time', 'Knockdowns per 15', 'Takedowns per 15', 'Takedown Accuracy', 'Takedown Defense', 'Sub Attempts per 15'],
+    'fighter1': [player1_height, player1_reach, player1_leg_reach, player1_height_inches, player1_body_size, player1_winby_ko, player1_winby_sub, player1_winby_dec, player1_avg_fighttime, player1_knockdowns_per_15, player1_take_downs_per_15, player1_takedown_accuracy, player1_takedown_defense, player1_sub_attempts_per_15],
+    'fighter2': [player2_height, player2_reach, player2_leg_reach, player2_height_inches, player2_body_size, player2_winby_ko, player2_winby_sub, player2_winby_dec, player2_avg_fighttime, player2_knockdowns_per_15, player2_take_downs_per_15, player2_takedown_accuracy, player2_takedown_defense, player2_sub_attempts_per_15]
+})
+fighter_metrics = fighter_metrics.set_index('metric')
+
+# make sure each column is a float
+fighter_metrics['fighter1'] = fighter_metrics['fighter1'].str.replace('%','').astype(float)
+fighter_metrics['fighter2'] = fighter_metrics['fighter2'].str.replace('%','').astype(float)
+
+
+
+# Add fighter differences to fighter metrics
+fighter_metrics['difference'] = fighter_metrics['fighter1'] - fighter_metrics['fighter2']
+
+
+
+# display fighter metrics
+st.write(fighter_metrics)
+
+
+##      TAPOLOGY     ##
+
+tapology_files = os.listdir(home + '/tapology/fighters')
+
+# load fighter 1 tapology
+fighter_1_files = [i for i in tapology_files if selected_fighter_1 in i]
+fighter_2_files = [i for i in tapology_files if selected_fighter_2 in i]
+
+# display available files
+st.write(fighter_1_files)
+st.write(fighter_2_files)
+
 
 
 
@@ -1200,20 +1286,32 @@ st.sidebar.write('Follow links for fighter Wikipedia pages')
 
 first_name1 = selected_fighter_1.split()[0]
 last_name1 = selected_fighter_1.split()[1]
-st.sidebar.write('https://en.wikipedia.org/wiki/' + first_name1 + '_' + last_name1)
+wiki_link1 = f'https://en.wikipedia.org/wiki/{first_name1}_{last_name1}'
+st.sidebar.markdown(f"[{first_name1} {last_name1} Wikipedia]({wiki_link1})")
 
 first_name2 = selected_fighter_2.split()[0]
 last_name2 = selected_fighter_2.split()[1]
-st.sidebar.write('https://en.wikipedia.org/wiki/' + first_name2 + '_' + last_name2)
+wiki_link2 = f'https://en.wikipedia.org/wiki/{first_name2}_{last_name2}'
+st.sidebar.markdown(f"[{first_name2} {last_name2} Wikipedia]({wiki_link2})")
 
 st.sidebar.subheader('UFC.COM')
-st.sidebar.write('https://www.ufc.com/search?query=' + first_name1 + '+' + last_name1)
-st.sidebar.write('https://www.ufc.com/search?query=' + first_name2 + '+' + last_name2)
+ufc_link1 = f'https://www.ufc.com/search?query={first_name1}+{last_name1}'
+st.sidebar.markdown(f"[{first_name1} {last_name1} UFC.COM]({ufc_link1})")
+
+ufc_link2 = f'https://www.ufc.com/search?query={first_name2}+{last_name2}'
+st.sidebar.markdown(f"[{first_name2} {last_name2} UFC.COM]({ufc_link2})")
 
 st.sidebar.subheader('Sherdog Stats')
-st.sidebar.write('https://www.sherdog.com/search.php?q=' + first_name1 + '+' + last_name1)
-st.sidebar.write('https://www.sherdog.com/search.php?q=' + first_name2 + '+' + last_name2)
+sherdog_link1 = f'https://www.sherdog.com/search.php?q={first_name1}+{last_name1}'
+st.sidebar.markdown(f"[{first_name1} {last_name1} Sherdog Stats]({sherdog_link1})")
 
+sherdog_link2 = f'https://www.sherdog.com/search.php?q={first_name2}+{last_name2}'
+st.sidebar.markdown(f"[{first_name2} {last_name2} Sherdog Stats]({sherdog_link2})")
 
+st.sidebar.subheader('Tapology')
+tapology_link1 = f'https://www.tapology.com/search?term={first_name1}+{last_name1}&search=Submit&mainSearchFilter=fighters'
+st.sidebar.markdown(f"[{first_name1} {last_name1} Tapology]({tapology_link1})")
 
+tapology_link2 = f'https://www.tapology.com/search?term={first_name2}+{last_name2}&search=Submit&mainSearchFilter=fighters'
+st.sidebar.markdown(f"[{first_name2} {last_name2} Tapology]({tapology_link2})")
 
