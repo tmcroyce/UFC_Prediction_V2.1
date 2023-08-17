@@ -280,10 +280,13 @@ try:
     fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
     # open image
     fighter1_final_image = Image.open(fighter1_img)
+    print('fighter 1 image loaded')
     fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
     # open image
     fighter2_final_image = Image.open(fighter2_img)
+    print('fighter 2 image loaded')
 except:
+    print('fighter images not found. Calling function')
     # Call the function
     get_fighter_pic_url(selected_matchup_url, 1)
     get_fighter_pic_url(selected_matchup_url, 2)  
@@ -305,7 +308,7 @@ except:
 
 
 
-col0,  col1, col2, col3, col4, col5= st.columns([.1, .2, .2,.2, .2, .1])
+col0,  col1, col2, col4, col5= st.columns([.1, .2, .4, .2, .1])
 
 col1.header(selected_fighter_1)
 col4.header(selected_fighter_2)
@@ -349,13 +352,13 @@ def height_to_inches(height):
     return total_inches
 
 # add metrics to cols 2 and 3
-col2.metric('Height', player1_height)
-col2.metric('Reach', player1_reach)
-col2.metric('Leg Reach', player1_leg_reach)
+# col2.metric('Height', player1_height)
+# col2.metric('Reach', player1_reach)
+# col2.metric('Leg Reach', player1_leg_reach)
 # calculate body size as height - leg_reach
 # height to inches
 player1_height_inches = height_to_inches(player1_height)
-col2.metric('Height (Inches)', player1_height_inches)
+# col2.metric('Height (Inches)', player1_height_inches)
 player1_height = float(player1_height_inches)
 # drop ' in' from leg reach
 player1_leg_reach = player1_leg_reach.replace(' in', '')
@@ -365,24 +368,26 @@ player1_body_size = player1_height - player1_leg_reach
 # fix reach by dropping ' in' and converting to float
 player1_reach = player1_reach.replace(' in', '')
 player1_reach = float(player1_reach)
-col2.metric('Upper Body Length', player1_body_size)
-col2.metric('Win by KO', player1_winby_ko)
-col2.metric('Win by Sub', player1_winby_sub)
-col2.metric('Win by Dec', player1_winby_dec)
-col2.metric('Avg Fight Time', player1_avg_fighttime)
-col2.metric('Knockdowns per 15', player1_knockdowns_per_15)
-col2.metric('Takedowns per 15', player1_take_downs_per_15)
-col2.metric('Takedown Accuracy', player1_takedown_accuracy)
-col2.metric('Takedown Defense', player1_takedown_defense)
-col2.metric('Sub Attempts per 15', player1_sub_attempts_per_15)
+# col2.metric('Upper Body Length', player1_body_size)
+# col2.metric('Win by KO', player1_winby_ko)
+# col2.metric('Win by Sub', player1_winby_sub)
+# col2.metric('Win by Dec', player1_winby_dec)
+# col2.metric('Avg Fight Time', player1_avg_fighttime)
+# col2.metric('Knockdowns per 15', player1_knockdowns_per_15)
+# Make sure Takedowns per 15 is numeric
+player1_take_downs_per_15 = float(player1_take_downs_per_15)
+# col2.metric('Takedowns per 15', player1_take_downs_per_15)
+# col2.metric('Takedown Accuracy', player1_takedown_accuracy)
+# col2.metric('Takedown Defense', player1_takedown_defense)
+# col2.metric('Sub Attempts per 15', player1_sub_attempts_per_15)
 
-col3.metric('Height', player2_height)
-col3.metric('Reach', player2_reach)
-col3.metric('Leg Reach', player2_leg_reach)
+# col3.metric('Height', player2_height)
+# col3.metric('Reach', player2_reach)
+# col3.metric('Leg Reach', player2_leg_reach)
 # calculate body size as height - leg_reach
 # height to inches
 player2_height_inches = height_to_inches(player2_height)
-col3.metric('Height (Inches)', player2_height_inches)
+# col3.metric('Height (Inches)', player2_height_inches)
 player2_height = float(player2_height_inches)
 # drop ' in' from leg reach
 player2_leg_reach = player2_leg_reach.replace(' in', '')
@@ -392,37 +397,78 @@ player2_body_size = player2_height - player2_leg_reach
 # fix reach by dropping ' in' and converting to float
 player2_reach = player2_reach.replace(' in', '')
 player2_reach = float(player2_reach)
-col3.metric('Upper Body Length', player2_body_size)
-col3.metric('Win by KO', player2_winby_ko)
-col3.metric('Win by Sub', player2_winby_sub)
-col3.metric('Win by Dec', player2_winby_dec)
-col3.metric('Avg Fight Time', player2_avg_fighttime)
-col3.metric('Knockdowns per 15', player2_knockdowns_per_15)
-col3.metric('Takedowns per 15', player2_take_downs_per_15)
-col3.metric('Takedown Accuracy', player2_takedown_accuracy)
-col3.metric('Takedown Defense', player2_takedown_defense)
-col3.metric('Sub Attempts per 15', player2_sub_attempts_per_15)
+# col3.metric('Upper Body Length', player2_body_size)
+# col3.metric('Win by KO', player2_winby_ko)
+# col3.metric('Win by Sub', player2_winby_sub)
+# col3.metric('Win by Dec', player2_winby_dec)
+# col3.metric('Avg Fight Time', player2_avg_fighttime)
+# col3.metric('Knockdowns per 15', player2_knockdowns_per_15)
+# make sure takedowns per 15 is numeric
+player2_take_downs_per_15 = float(player2_take_downs_per_15)
+# col3.metric('Takedowns per 15', player2_take_downs_per_15)
+# col3.metric('Takedown Accuracy', player2_takedown_accuracy)
+# col3.metric('Takedown Defense', player2_takedown_defense)
+# col3.metric('Sub Attempts per 15', player2_sub_attempts_per_15)
+
 
 fighter_metrics = pd.DataFrame({
-    'metric': ['Height', 'Reach', 'Leg Reach', 'Height (Inches)', 'Upper Body Length', 'Win by KO', 'Win by Sub', 'Win by Dec', 'Avg Fight Time', 'Knockdowns per 15', 'Takedowns per 15', 'Takedown Accuracy', 'Takedown Defense', 'Sub Attempts per 15'],
+    'metric': ['Height', 'Reach (Inches)', 'Leg Reach (Inches)', 'Height (Inches)', 'Upper Body Length (Inches)', 'Win by KO (%)', 'Win by Sub(%)', 'Win by Dec(%)', 'Avg Fight Time', 'Knockdowns per 15', 'Takedowns per 15', 'Takedown Accuracy (%)', 'Takedown Defense (%)', 'Sub Attempts per 15'],
     'fighter1': [player1_height, player1_reach, player1_leg_reach, player1_height_inches, player1_body_size, player1_winby_ko, player1_winby_sub, player1_winby_dec, player1_avg_fighttime, player1_knockdowns_per_15, player1_take_downs_per_15, player1_takedown_accuracy, player1_takedown_defense, player1_sub_attempts_per_15],
     'fighter2': [player2_height, player2_reach, player2_leg_reach, player2_height_inches, player2_body_size, player2_winby_ko, player2_winby_sub, player2_winby_dec, player2_avg_fighttime, player2_knockdowns_per_15, player2_take_downs_per_15, player2_takedown_accuracy, player2_takedown_defense, player2_sub_attempts_per_15]
 })
 fighter_metrics = fighter_metrics.set_index('metric')
 
 # make sure each column is a float
-fighter_metrics['fighter1'] = fighter_metrics['fighter1'].str.replace('%','').astype(float)
-fighter_metrics['fighter2'] = fighter_metrics['fighter2'].str.replace('%','').astype(float)
+def time_to_float(time_str):
+    # convert time to float
+    minutes, seconds = time_str.split(':')
+    return float(minutes) + float(seconds) / 60
 
+def str_to_float(x):
+    if type(x) is str:
+        if ':' in x:
+            return time_to_float(x)
+        if '%' in x:
+            return float(x.replace('%', ''))
+    else:
+        return float(x)
 
+fighter_metrics['fighter1'] = fighter_metrics['fighter1'].apply(str_to_float)
+fighter_metrics['fighter2'] = fighter_metrics['fighter2'].apply(str_to_float)
+# rename fighter1 and fighter2 columns to actual names
+fighter_metrics = fighter_metrics.rename(columns={'fighter1': selected_fighter_1, 'fighter2': selected_fighter_2})
 
 # Add fighter differences to fighter metrics
-fighter_metrics['difference'] = fighter_metrics['fighter1'] - fighter_metrics['fighter2']
+fighter_metrics['dif'] = fighter_metrics[selected_fighter_1] - fighter_metrics[selected_fighter_2]
 
+# round all values in fighter metrics to 2 decimal places
+fighter_metrics = fighter_metrics.round(2)
 
+# drop height in inches
+fighter_metrics = fighter_metrics.drop(['Height (Inches)'], axis=0)
 
-# display fighter metrics
-st.write(fighter_metrics)
+# rearraange columns so dif in middle
+fighter_metrics = fighter_metrics[[selected_fighter_1, 'dif', selected_fighter_2]]
+
+# drop metric row 
+#fighter_metrics = fighter_metrics.drop(['metric'], axis=0)
+
+def highlight_larger(s, props):
+    is_max = s == s.max()
+    return [props if v else '' for v in is_max]
+
+# Apply highlight and formatting
+styled_fighter_metrics = (fighter_metrics.style
+                          .apply(highlight_larger, props='background-color: lightgreen;', 
+                                 subset=[selected_fighter_1, selected_fighter_2], axis=1)
+                          .format("{:.2f}", subset=[selected_fighter_1, selected_fighter_2, 'dif']))
+
+# Convert the styled dataframe to HTML and set a custom height
+html = styled_fighter_metrics.render()
+custom_height = 1000  # adjust this as needed
+html_with_custom_height = f'<div style="height: {custom_height}px; overflow:auto;">{html}</div>'
+
+col2.markdown(html_with_custom_height, unsafe_allow_html=True)
 
 
 ##      TAPOLOGY     ##
@@ -433,9 +479,71 @@ tapology_files = os.listdir(home + '/tapology/fighters')
 fighter_1_files = [i for i in tapology_files if selected_fighter_1 in i]
 fighter_2_files = [i for i in tapology_files if selected_fighter_2 in i]
 
-# display available files
-st.write(fighter_1_files)
-st.write(fighter_2_files)
+# display available files if button is clicked
+if st.button('Show Available Files'):
+    st.write(fighter_1_files)
+    st.write(fighter_2_files)
+
+# Load Record by Promotion for both fighters
+fighter_1_promo_file = [i for i in fighter_1_files if 'record_by_promotion' in i][0]
+fighter_2_promo_file = [i for i in fighter_2_files if 'record_by_promotion' in i][0]
+
+# load and display
+fighter_1_promo = pd.read_csv(home + '/tapology/fighters/' + fighter_1_promo_file)
+fighter_2_promo = pd.read_csv(home + '/tapology/fighters/' + fighter_2_promo_file)
+
+# transpose and make first row the header
+fighter_1_promo = fighter_1_promo.T
+fighter_1_promo.columns = fighter_1_promo.iloc[0]
+fighter_1_promo = fighter_1_promo[1:]
+
+fighter_2_promo = fighter_2_promo.T
+fighter_2_promo.columns = fighter_2_promo.iloc[0]
+fighter_2_promo = fighter_2_promo[1:]
+
+# drop any rows with 'No Contests' in index
+fighter_1_promo = fighter_1_promo[~fighter_1_promo.index.str.contains('No Contests')]
+fighter_2_promo = fighter_2_promo[~fighter_2_promo.index.str.contains('No Contests')]
+# drop any rows with 'Draws' in index
+fighter_1_promo = fighter_1_promo[~fighter_1_promo.index.str.contains('Draws')]
+fighter_2_promo = fighter_2_promo[~fighter_2_promo.index.str.contains('Draws')]
+# drop any rows with 'DQ' in index
+fighter_1_promo = fighter_1_promo[~fighter_1_promo.index.str.contains('DQ')]
+fighter_2_promo = fighter_2_promo[~fighter_2_promo.index.str.contains('DQ')]
+
+#display in 2 columns
+col1, col2 = st.columns(2)
+col1.write(fighter_1_promo, length = 900)
+col2.write(fighter_2_promo, length = 900)
+
+
+# Load and Display Fight Results
+fighter_1_fight_results_file = [i for i in fighter_1_files if 'fight_results' in i][0]
+fighter_2_fight_results_file = [i for i in fighter_2_files if 'fight_results' in i][0]
+
+# load and display
+fighter_1_fight_results = pd.read_csv(home + '/tapology/fighters/' + fighter_1_fight_results_file)
+fighter_2_fight_results = pd.read_csv(home + '/tapology/fighters/' + fighter_2_fight_results_file)
+
+# drop if cancelled bout
+fighter_1_fight_results = fighter_1_fight_results[~fighter_1_fight_results['Fight Summary'].str.contains('Cancelled')]
+fighter_2_fight_results = fighter_2_fight_results[~fighter_2_fight_results['Fight Summary'].str.contains('Cancelled')]
+
+# Re-arrange columns to be Opponent Name, Fight Date, Fight Summary, Event, and then the rest
+fighter_1_fight_results = fighter_1_fight_results[['Opponent Name', 'Fight Date', 'Fight Summary', 'Event'] + [col for col in fighter_1_fight_results.columns if col not in ['Opponent Name', 'Fight Date', 'Fight Summary', 'Event']]]
+fighter_2_fight_results = fighter_2_fight_results[['Opponent Name', 'Fight Date', 'Fight Summary', 'Event'] + [col for col in fighter_2_fight_results.columns if col not in ['Opponent Name', 'Fight Date', 'Fight Summary', 'Event']]]
+
+# display in 2 columns
+col1, col2 = st.columns(2)
+col1.write(fighter_1_fight_results, length = 1200)
+col2.write(fighter_2_fight_results, length = 1200)
+
+
+
+
+
+
+
 
 
 
@@ -451,6 +559,11 @@ def odds_to_prob(odds):
         prob = round(1 - 1/(-odds/100 + 1),3)*100
         prob = str(round(prob, 3)) + '%'
         return prob
+
+
+
+
+
 
 # # Assign Height and Length Values
 # try:
