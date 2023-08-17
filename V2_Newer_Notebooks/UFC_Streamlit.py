@@ -7,8 +7,8 @@ import seaborn as sns
 from matplotlib.pyplot import figure
 from bs4 import BeautifulSoup
 import time
-import requests     # to get images
-import shutil       # to save files locally
+import requests     
+import shutil       
 import datetime
 from scipy.stats import norm
 import warnings
@@ -38,7 +38,7 @@ home2 = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/
 os.chdir(home)
 
 #------------------------------  Define Functions -----------------------------------------------------------------
-# function to return the next 3 UFC events using BeautifulSoup
+# function to return the next 3 UFC events using BeautifulSoup (BS)
 def get_next_events(url):
     page = requests.get(url)
     soup = BeautifulSoup(page.content, 'html.parser')
@@ -73,7 +73,7 @@ def get_next_events(url):
     
     return data
 
-# Function to get the fight card for a given event using BeautifulSoup
+# Function to get the fight card for a given event using BS
 def get_event_fights(event_url):
     page = requests.get(event_url)
     soup = BeautifulSoup(page.content, 'html.parser')
@@ -157,7 +157,6 @@ def get_fighter_urls(event_details_url):
 
     return next_event_data
 
-
 # check if it is a saturday
 def is_saturday():
     today = str(datetime.today().weekday())
@@ -171,20 +170,21 @@ def is_saturday():
 next_eventz = get_next_event_ufcstats()
 
 
-# load big dataframe
+# load primary dataframe
 data = pd.read_csv(home + '/final/aggregates/Double_Fights_DF_V14.csv')
-
 
 
 # make sure events have fight info. If not, disregard that event
 next = get_next_events('https://www.ufc.com/events')
 next_event_title = next['event_title'][0]
 
-# load next event data, if it exists
+# load next event data, if it exists. If it does not exist, run Scrape_UFC_Upcoming_Events
 try:
     next_event_data = pd.read_csv(home + '/final/next_fights/'+ next_event_title+ '_.csv')
 except:
     st.write('No data for ' + next_event_title)
+
+
 
 
 ########           Select Next Event    ################
@@ -206,8 +206,9 @@ selected_fighter_2 = fight.split(' vs. ')[1].strip()
 
 selected_matchup_url = next_event_data[next_event_data['fighter1'] == selected_fighter_1]['matchup_url'].values[0]
 
-
+# Grab fighter pictures
 def get_fighter_pic_url(selected_matchup_url, fighter_choice):
+    # Split the selected fighter names into first and last names
     fighter_last_name1 = selected_fighter_1.split(' ')[1]
     fighter_last_name1 = fighter_last_name1.upper()
     fighter_first_name1 = selected_fighter_1.split(' ')[0]
@@ -220,47 +221,59 @@ def get_fighter_pic_url(selected_matchup_url, fighter_choice):
 
     driver = None
     if driver == None:
-        driver = webdriver.Chrome('C:\\Users\\Travis\\OneDrive\\Data Science\\Personal_Projects\\Sports\\UFC_Prediction_V2\\chromedriver.exe')
+        # Set up the Selenium WebDriver
+        driver = webdriver.Chrome(home2 + '/chromedriver')
     driver.get(selected_matchup_url)
     time.sleep(2)
-    
+
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     h = soup.find_all('img')
     imgs = []
     for i in h:
+        # Retrieve the URLs of all images on the page
         imgs.append(i['src'])
 
-    # keep imgs with full_body
+    # Keep only the images with 'full_body' in the URL
     imgs = [i for i in imgs if 'full_body' in i]
 
+    # Get the URL of the first fighter's image
     fighter_img1 = [i for i in imgs if fighter_last_name1 in i][0]
     fighter_img1 = fighter_img1.replace('athlete_detail_stance_thumbnail_full_body', 'athlete_matchup_stats_full_body')
-    # end fighter_img at .png
+    # Only keep the part of the URL before '.png'
     fighter_img1 = fighter_img1[:fighter_img1.find('.png') + 4]
 
+    # Get the URL of the second fighter's image
     fighter_img2 = [i for i in imgs if fighter_last_name2 in i][0]
     fighter_img2 = fighter_img2.replace('athlete_detail_stance_thumbnail_full_body', 'athlete_matchup_stats_full_body')
-    # end fighter_img at .png
+    # Only keep the part of the URL before '.png'
     fighter_img2 = fighter_img2[:fighter_img2.find('.png') + 4]
 
     if fighter_choice == 1:
-        # save fighter_img1 to file
+        # Download and save the first fighter's image to a file
         fighter1_img = requests.get(fighter_img1)
-        with open(home + 'fighter_images/' + selected_fighter_1 + '.png', 'wb') as f:
+        with open(home + '/fighter_images/' + selected_fighter_1 + '.png', 'wb') as f:
             f.write(fighter1_img.content)
-        
-        #return fighter_img1
+
+        # Return the URL of the first fighter's image
+        return fighter_img1
     else:
+        # Download and save the second fighter's image to a file
         fighter2_img = requests.get(fighter_img2)
-        with open(home + 'fighter_images/' + selected_fighter_2 + '.png', 'wb') as f:
+        with open(home + '/fighter_images/' + selected_fighter_2 + '.png', 'wb') as f:
             f.write(fighter2_img.content)
-        
-        #return fighter_img2
-    
+
+        # Return the URL of the second fighter's image
+        return fighter_img2
+
+# Call the function
+get_fighter_pic_url(selected_matchup_url, 1)
+get_fighter_pic_url(selected_matchup_url, 2)    
 
 # try loading fighter images
-fighter1_img = home + 'fighter_images/' + str(selected_fighter_1) + '.png'
-fighter2_img = home + 'fighter_images/' + str(selected_fighter_2) + '.png'
+fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
+fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
+
+
 
 ################ FIGHTER INFO ####################
 
@@ -268,11 +281,11 @@ from PIL import Image
 try:
     fighter1_final_image = Image.open(fighter1_img)
 except:
-    fighter1_final_image = Image.open(home + 'fighter_images/unknown_fighter.png')
+    fighter1_final_image = Image.open(home + '/fighter_images/unknown_fighter.png')
 try:
     fighter2_final_image = Image.open(fighter2_img)
 except:
-    fighter2_final_image = Image.open(home + 'fighter_images/unknown_fighter.png')
+    fighter2_final_image = Image.open(home + '/fighter_images/unknown_fighter.png')
 
 
 
