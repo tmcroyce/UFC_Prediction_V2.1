@@ -157,6 +157,7 @@ def get_fighter_urls(event_details_url):
 
     return next_event_data
 
+
 # check if it is a saturday
 def is_saturday():
     today = str(datetime.today().weekday())
@@ -472,6 +473,9 @@ col2.markdown(html_with_custom_height, unsafe_allow_html=True)
 
 
 ##      TAPOLOGY     ##
+st.write('---')
+
+st.subheader('Fights by Promotion')
 
 tapology_files = os.listdir(home + '/tapology/fighters')
 
@@ -510,11 +514,25 @@ fighter_2_promo = fighter_2_promo[~fighter_2_promo.index.str.contains('Draws')]
 # drop any rows with 'DQ' in index
 fighter_1_promo = fighter_1_promo[~fighter_1_promo.index.str.contains('DQ')]
 fighter_2_promo = fighter_2_promo[~fighter_2_promo.index.str.contains('DQ')]
+# Replace all 'Percent' in the index values with '%'
+fighter_1_promo.index = fighter_1_promo.index.str.replace('Percent', '%')
+fighter_2_promo.index = fighter_2_promo.index.str.replace('Percent', '%')
+
+# Columns should only keep the first word of the column name
+fighter_1_promo.columns = fighter_1_promo.columns.str.split(' ').str[0]
+fighter_2_promo.columns = fighter_2_promo.columns.str.split(' ').str[0]
+
+# Rows should be sorted like this: Years Active, Wins, Losses, rows with 'Win %' in them, rows with 'Loss %' in them, then the rest
+fighter_1_promo = fighter_1_promo.loc[['Wins', 'Losses'] + [i for i in fighter_1_promo.index if 'Win %' in i] + [i for i in fighter_1_promo.index if 'Loss %' in i] + [i for i in fighter_1_promo.index if i not in ['Years', 'Wins', 'Losses'] and 'Win %' not in i and 'Loss %' not in i]]
+fighter_2_promo = fighter_2_promo.loc[['Wins', 'Losses'] + [i for i in fighter_2_promo.index if 'Win %' in i] + [i for i in fighter_2_promo.index if 'Loss %' in i] + [i for i in fighter_2_promo.index if i not in ['Years', 'Wins', 'Losses'] and 'Win %' not in i and 'Loss %' not in i]]
+
+
+
 
 #display in 2 columns
 col1, col2 = st.columns(2)
-col1.write(fighter_1_promo, length = 900)
-col2.write(fighter_2_promo, length = 900)
+col1.table(fighter_1_promo)
+col2.table(fighter_2_promo)
 
 
 # Load and Display Fight Results
@@ -525,18 +543,23 @@ fighter_2_fight_results_file = [i for i in fighter_2_files if 'fight_results' in
 fighter_1_fight_results = pd.read_csv(home + '/tapology/fighters/' + fighter_1_fight_results_file)
 fighter_2_fight_results = pd.read_csv(home + '/tapology/fighters/' + fighter_2_fight_results_file)
 
-# drop if cancelled bout
-fighter_1_fight_results = fighter_1_fight_results[~fighter_1_fight_results['Fight Summary'].str.contains('Cancelled')]
-fighter_2_fight_results = fighter_2_fight_results[~fighter_2_fight_results['Fight Summary'].str.contains('Cancelled')]
+# # drop if cancelled bout
+# fighter_1_fight_results = fighter_1_fight_results[~fighter_1_fight_results['Fight Summary'].str.contains('Cancelled')]
+# fighter_2_fight_results = fighter_2_fight_results[~fighter_2_fight_results['Fight Summary'].str.contains('Cancelled')]
 
 # Re-arrange columns to be Opponent Name, Fight Date, Fight Summary, Event, and then the rest
 fighter_1_fight_results = fighter_1_fight_results[['Opponent Name', 'Fight Date', 'Fight Summary', 'Event'] + [col for col in fighter_1_fight_results.columns if col not in ['Opponent Name', 'Fight Date', 'Fight Summary', 'Event']]]
 fighter_2_fight_results = fighter_2_fight_results[['Opponent Name', 'Fight Date', 'Fight Summary', 'Event'] + [col for col in fighter_2_fight_results.columns if col not in ['Opponent Name', 'Fight Date', 'Fight Summary', 'Event']]]
 
+# add line
+st.write('---')
+
+st.subheader('Fight Results')
+
 # display in 2 columns
 col1, col2 = st.columns(2)
-col1.write(fighter_1_fight_results, length = 1200)
-col2.write(fighter_2_fight_results, length = 1200)
+col1.write(fighter_1_fight_results)
+col2.write(fighter_2_fight_results)
 
 
 
@@ -1427,4 +1450,12 @@ st.sidebar.markdown(f"[{first_name1} {last_name1} Tapology]({tapology_link1})")
 
 tapology_link2 = f'https://www.tapology.com/search?term={first_name2}+{last_name2}&search=Submit&mainSearchFilter=fighters'
 st.sidebar.markdown(f"[{first_name2} {last_name2} Tapology]({tapology_link2})")
+
+
+st.sidebar.subheader('BestFightOdds')
+bfo_link = f'https://www.bestfightodds.com/search?query={first_name1}+{last_name1}'
+st.sidebar.markdown(f"[{first_name1} {last_name1} BestFightOdds]({bfo_link})")
+
+bfo_link = f'https://www.bestfightodds.com/search?query={first_name2}+{last_name2}'
+st.sidebar.markdown(f"[{first_name2} {last_name2} BestFightOdds]({bfo_link})")
 
