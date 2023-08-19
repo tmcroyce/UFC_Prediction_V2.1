@@ -1,4 +1,8 @@
 
+# The following pages are involved with this page:
+# - Scraping Tapology.ipynb (scrapes tapology.com for fighter info and saves)
+# - Scrape_UFC_Upcoming_Events.ipynb (scrapes ufc.com for upcoming events and saves)
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,7 +20,6 @@ warnings.filterwarnings('ignore')
 from random import randint
 import  random
 import os
-#os.chdir('C:/Users/tmcro/OneDrive/Data Science/Personal_Projects/Sports/UFC_Prediction')
 from cmath import nan
 from bs4 import BeautifulSoup
 import streamlit as st
@@ -187,7 +190,6 @@ except:
 
 
 
-
 ########           Select Next Event    ################
 
 event = next_event_title
@@ -280,14 +282,12 @@ def get_fighter_pic_url(selected_matchup_url, fighter_choice):
 try:
     fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
     # open image
-    fighter1_final_image = Image.open(fighter1_img)
-    print('fighter 1 image loaded')
+    # fighter1_final_image = Image.open(fighter1_img)
     fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
     # open image
-    fighter2_final_image = Image.open(fighter2_img)
-    print('fighter 2 image loaded')
+    # fighter2_final_image = Image.open(fighter2_img)
 except:
-    print('fighter images not found. Calling function')
+    st.write('fighter images not found. Calling function')
     # Call the function
     get_fighter_pic_url(selected_matchup_url, 1)
     get_fighter_pic_url(selected_matchup_url, 2)  
@@ -369,22 +369,10 @@ player1_body_size = player1_height - player1_leg_reach
 # fix reach by dropping ' in' and converting to float
 player1_reach = player1_reach.replace(' in', '')
 player1_reach = float(player1_reach)
-# col2.metric('Upper Body Length', player1_body_size)
-# col2.metric('Win by KO', player1_winby_ko)
-# col2.metric('Win by Sub', player1_winby_sub)
-# col2.metric('Win by Dec', player1_winby_dec)
-# col2.metric('Avg Fight Time', player1_avg_fighttime)
-# col2.metric('Knockdowns per 15', player1_knockdowns_per_15)
+
 # Make sure Takedowns per 15 is numeric
 player1_take_downs_per_15 = float(player1_take_downs_per_15)
-# col2.metric('Takedowns per 15', player1_take_downs_per_15)
-# col2.metric('Takedown Accuracy', player1_takedown_accuracy)
-# col2.metric('Takedown Defense', player1_takedown_defense)
-# col2.metric('Sub Attempts per 15', player1_sub_attempts_per_15)
 
-# col3.metric('Height', player2_height)
-# col3.metric('Reach', player2_reach)
-# col3.metric('Leg Reach', player2_leg_reach)
 # calculate body size as height - leg_reach
 # height to inches
 player2_height_inches = height_to_inches(player2_height)
@@ -398,18 +386,10 @@ player2_body_size = player2_height - player2_leg_reach
 # fix reach by dropping ' in' and converting to float
 player2_reach = player2_reach.replace(' in', '')
 player2_reach = float(player2_reach)
-# col3.metric('Upper Body Length', player2_body_size)
-# col3.metric('Win by KO', player2_winby_ko)
-# col3.metric('Win by Sub', player2_winby_sub)
-# col3.metric('Win by Dec', player2_winby_dec)
-# col3.metric('Avg Fight Time', player2_avg_fighttime)
-# col3.metric('Knockdowns per 15', player2_knockdowns_per_15)
+
 # make sure takedowns per 15 is numeric
 player2_take_downs_per_15 = float(player2_take_downs_per_15)
-# col3.metric('Takedowns per 15', player2_take_downs_per_15)
-# col3.metric('Takedown Accuracy', player2_takedown_accuracy)
-# col3.metric('Takedown Defense', player2_takedown_defense)
-# col3.metric('Sub Attempts per 15', player2_sub_attempts_per_15)
+
 
 
 fighter_metrics = pd.DataFrame({
@@ -563,12 +543,105 @@ col2.write(fighter_2_fight_results)
 
 
 
+##    SCRAPE ODDS       ## 
+st.subheader('DraftKings Odds')
+st.write('---')
 
+# add button to scrape odds
+url = 'https://sportsbook.draftkings.com/leagues/mma/ufc'
 
+# load driver
+driver_path = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/chromedriver'
+driver = webdriver.Chrome(executable_path=driver_path)
+driver.get(url)
+html = driver.page_source
+soup = BeautifulSoup(html, 'html.parser')
 
+# get all tables
+tables = soup.find_all('table')
+# open first table
+t1 = pd.read_html(str(tables[0]))[0]
 
+# grab all links from table 1
+links = []
+for link in tables[0].find_all('a'):
+    links.append(link.get('href'))
 
+# drop all items in list with sgpmode in it
+links = [x for x in links if 'sgpmode' not in x]
+#links to df
+links_df = pd.DataFrame(links, columns=['links'])
+# reindex
+links_df.reset_index(drop=True, inplace=True)
 
+# add links from links_df to the main df by index
+merged_df = pd.merge(t1, links_df, left_index=True, right_index=True)
+# get first column name
+col_name = merged_df.columns[0]
+# change it to 'Date - Fighter'
+merged_df.rename(columns={col_name:'Date - Fighter'}, inplace=True)
+
+# Split the 'Date - Fighter' column into two columns at 'PM'
+merged_df[['Time', 'Fighter']] = merged_df['Date - Fighter'].str.split('PM', expand=True)
+# Drop the 'Date - Fighter' column
+merged_df.drop(columns=['Date - Fighter'], inplace=True)
+# drop the Point Spread column
+merged_df.drop(columns=['Point Spread'], inplace=True)
+# New column for Rounds
+merged_df['Rounds'] = merged_df['Total Rounds'].str[0:5]
+# New column for Round Odds
+merged_df['Round Odds'] = merged_df['Total Rounds'].str[5:]
+# drop the Total Rounds column
+merged_df.drop(columns=['Total Rounds'], inplace=True)
+# Move Moneyline and links to right side of df
+cols_at_end = ['Moneyline', 'links']
+merged_df = merged_df[[c for c in merged_df if c not in cols_at_end]
+        + [c for c in cols_at_end if c in merged_df]]
+
+# add the 'https://www.sportsbook.draftkings.com' to the links
+merged_df['links'] = 'https://www.sportsbook.draftkings.com' + merged_df['links']
+
+#st.table(merged_df)
+
+# TO Get the specific odds, add:
+# Popular:  ?category=odds&subcategory=popular to the end of the url
+# Fight Lines: ?category=odds&subcategory=fight-lines
+# Winning Method: ?category=odds&subcategory=winning-method
+# Parlays: ?category=odds&subcategory=fight-parlays
+# Fight Props: ?category=odds&subcategory=fight-props
+# Round Props: ?category=odds&subcategory=round-props
+
+# filter merged_df to only show selected fight
+selected_fight = merged_df[merged_df['Fighter'].str.contains(selected_fighter_1_last_name) | merged_df['Fighter'].str.contains(selected_fighter_2_last_name)]
+st.table(selected_fight)
+
+# get top link in selected fight
+selected_fight_link = selected_fight['links'].values[0]
+selected_fight_popular_link = selected_fight_link + '?category=odds&subcategory=popular'
+selected_fight_fight_lines_link = selected_fight_link + '?category=odds&subcategory=fight-lines'
+selected_fight_winning_method_link = selected_fight_link + '?category=odds&subcategory=winning-method'
+selected_fight_fight_parlays_link = selected_fight_link + '?category=odds&subcategory=fight-parlays'
+selected_fight_fight_props_link = selected_fight_link + '?category=odds&subcategory=fight-props'
+selected_fight_round_props_link = selected_fight_link + '?category=odds&subcategory=round-props'
+
+# drop www from links
+selected_fight_popular_link = selected_fight_popular_link.replace('www.', '')
+selected_fight_fight_lines_link = selected_fight_fight_lines_link.replace('www.', '')
+selected_fight_winning_method_link = selected_fight_winning_method_link.replace('www.', '')
+selected_fight_fight_parlays_link = selected_fight_fight_parlays_link.replace('www.', '')
+selected_fight_fight_props_link = selected_fight_fight_props_link.replace('www.', '')
+selected_fight_round_props_link = selected_fight_round_props_link.replace('www.', '')
+
+# scrape popular
+driver.get(selected_fight_fight_lines_link)
+html = driver.page_source
+soup = BeautifulSoup(html, 'html.parser')
+# find div class sportsbook-responsive-card-container__body
+div = soup.find('div', {'class': 'sportsbook-responsive-card-container__body'})
+# print all text in div
+# for each div in div, print the text
+for div in div.find_all('div', {'class': 'sportsbook-event-accordion__wrapper expanded'}):
+    st.write(div.text)
 
 
 # function to convert vegas odds to implied probability
@@ -582,6 +655,11 @@ def odds_to_prob(odds):
         prob = round(1 - 1/(-odds/100 + 1),3)*100
         prob = str(round(prob, 3)) + '%'
         return prob
+
+
+
+
+
 
 
 
@@ -1437,12 +1515,6 @@ st.sidebar.markdown(f"[{first_name1} {last_name1} UFC.COM]({ufc_link1})")
 ufc_link2 = f'https://www.ufc.com/search?query={first_name2}+{last_name2}'
 st.sidebar.markdown(f"[{first_name2} {last_name2} UFC.COM]({ufc_link2})")
 
-st.sidebar.subheader('Sherdog Stats')
-sherdog_link1 = f'https://www.sherdog.com/search.php?q={first_name1}+{last_name1}'
-st.sidebar.markdown(f"[{first_name1} {last_name1} Sherdog Stats]({sherdog_link1})")
-
-sherdog_link2 = f'https://www.sherdog.com/search.php?q={first_name2}+{last_name2}'
-st.sidebar.markdown(f"[{first_name2} {last_name2} Sherdog Stats]({sherdog_link2})")
 
 st.sidebar.subheader('Tapology')
 tapology_link1 = f'https://www.tapology.com/search?term={first_name1}+{last_name1}&search=Submit&mainSearchFilter=fighters'
@@ -1451,11 +1523,21 @@ st.sidebar.markdown(f"[{first_name1} {last_name1} Tapology]({tapology_link1})")
 tapology_link2 = f'https://www.tapology.com/search?term={first_name2}+{last_name2}&search=Submit&mainSearchFilter=fighters'
 st.sidebar.markdown(f"[{first_name2} {last_name2} Tapology]({tapology_link2})")
 
-
 st.sidebar.subheader('BestFightOdds')
 bfo_link = f'https://www.bestfightodds.com/search?query={first_name1}+{last_name1}'
 st.sidebar.markdown(f"[{first_name1} {last_name1} BestFightOdds]({bfo_link})")
 
 bfo_link = f'https://www.bestfightodds.com/search?query={first_name2}+{last_name2}'
 st.sidebar.markdown(f"[{first_name2} {last_name2} BestFightOdds]({bfo_link})")
+
+st.sidebar.subheader('UFC FightPass')
+ufc_fp_link = f'https://www.ufc.tv/search?term={first_name1}+{last_name1}'
+st.sidebar.markdown(f"[{first_name1} {last_name1} UFC FightPass]({ufc_fp_link})")
+
+ufc_fp_link = f'https://www.ufc.tv/search?term={first_name2}+{last_name2}'
+st.sidebar.markdown(f"[{first_name2} {last_name2} UFC FightPass]({ufc_fp_link})")
+
+st.sidebar.subheader('DraftKings Odds')
+dk_link = f'https://sportsbook.draftkings.com/leagues/mma/ufc'
+st.sidebar.markdown(f"[DraftKings Odds]({dk_link})")
 
