@@ -34,11 +34,16 @@ from selenium.webdriver.chrome.options import Options
 
 st.set_page_config(page_title='UFC Prediction', page_icon=None, layout="wide", initial_sidebar_state="auto" )
 
-
-
 home = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/data'
 home2 = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2'
 os.chdir(home)
+
+
+
+
+
+
+
 
 #------------------------------  Define Functions -----------------------------------------------------------------
 # function to return the next 3 UFC events using BeautifulSoup (BS)
@@ -170,6 +175,15 @@ def is_saturday():
         return False
 
 
+
+
+
+
+
+
+
+
+
 # Get next event from ufcstats.com
 next_eventz = get_next_event_ufcstats()
 
@@ -187,6 +201,13 @@ try:
     next_event_data = pd.read_csv(home + '/final/next_fights/'+ next_event_title+ '_.csv')
 except:
     st.write('No data for ' + next_event_title)
+
+
+
+
+
+
+
 
 
 
@@ -282,10 +303,11 @@ def get_fighter_pic_url(selected_matchup_url, fighter_choice):
 try:
     fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
     # open image
-    # fighter1_final_image = Image.open(fighter1_img)
+    fighter1_final_image = Image.open(fighter1_img)
     fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
+    st.write('fighter images found?')
     # open image
-    # fighter2_final_image = Image.open(fighter2_img)
+    fighter2_final_image = Image.open(fighter2_img)
 except:
     st.write('fighter images not found. Calling function')
     # Call the function
@@ -294,19 +316,30 @@ except:
     fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
     fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'  
 
+
+
+
+
+
+
+
+
+
+
 ################ FIGHTER INFO ####################
 
 from PIL import Image
 
 try:
+    fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
     fighter1_final_image = Image.open(fighter1_img)
 except:
     fighter1_final_image = Image.open(home + '/fighter_images/unknown_fighter.png')
 try:
+    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
     fighter2_final_image = Image.open(fighter2_img)
 except:
     fighter2_final_image = Image.open(home + '/fighter_images/unknown_fighter.png')
-
 
 
 col0,  col1, col2, col4, col5= st.columns([.1, .2, .4, .2, .1])
@@ -328,7 +361,9 @@ player1_take_downs_per_15 = ufc_data['red_takedowns_landed_per_15_min'].values[0
 player1_takedown_accuracy = ufc_data['red_takedown_accuracy'].values[0]
 player1_takedown_defense = ufc_data['red_takedown_defense'].values[0]
 player1_sub_attempts_per_15 = ufc_data['red_submissions_attempts_per_15_min'].values[0]
-
+player1_sig_strike_attempts_per_min = ufc_data['red_sig_strikes_landed_per_min'].values[0]
+player1_strike_accuracy = ufc_data['red_sig_strikes_percent'].values[0]
+player1_strike_defense = ufc_data['red_sig_strikes_absorbed_percent'].values[0]
 
 player2_height = ufc_data['blue_height'].values[0]
 player2_reach = ufc_data['blue_reach'].values[0]
@@ -342,6 +377,9 @@ player2_take_downs_per_15 = ufc_data['blue_takedowns_landed_per_15_min'].values[
 player2_takedown_accuracy = ufc_data['blue_takedown_accuracy'].values[0]
 player2_takedown_defense = ufc_data['blue_takedown_defense'].values[0]
 player2_sub_attempts_per_15 = ufc_data['blue_submissions_attempts_per_15_min'].values[0]
+player2_sig_strike_attempts_per_min = ufc_data['blue_sig_strikes_landed_per_min'].values[0]
+player2_strike_accuracy = ufc_data['red_sig_strikes_percent'].values[0]
+player2_strike_defense = ufc_data['blue_sig_strikes_absorbed_percent'].values[0]
 
 def height_to_inches(height):
     height = height.split("'")
@@ -352,10 +390,9 @@ def height_to_inches(height):
     total_inches = feet*12 + inches
     return total_inches
 
-# add metrics to cols 2 and 3
-# col2.metric('Height', player1_height)
-# col2.metric('Reach', player1_reach)
-# col2.metric('Leg Reach', player1_leg_reach)
+
+
+
 # calculate body size as height - leg_reach
 # height to inches
 player1_height_inches = height_to_inches(player1_height)
@@ -390,14 +427,31 @@ player2_reach = float(player2_reach)
 # make sure takedowns per 15 is numeric
 player2_take_downs_per_15 = float(player2_take_downs_per_15)
 
+# make sure sig strike attempts per min is numeric
+player1_sig_strike_attempts_per_min = float(player1_sig_strike_attempts_per_min)
+player2_sig_strike_attempts_per_min = float(player2_sig_strike_attempts_per_min)
 
 
 fighter_metrics = pd.DataFrame({
-    'metric': ['Height', 'Reach (Inches)', 'Leg Reach (Inches)', 'Height (Inches)', 'Upper Body Length (Inches)', 'Win by KO (%)', 'Win by Sub(%)', 'Win by Dec(%)', 'Avg Fight Time', 'Knockdowns per 15', 'Takedowns per 15', 'Takedown Accuracy (%)', 'Takedown Defense (%)', 'Sub Attempts per 15'],
-    'fighter1': [player1_height, player1_reach, player1_leg_reach, player1_height_inches, player1_body_size, player1_winby_ko, player1_winby_sub, player1_winby_dec, player1_avg_fighttime, player1_knockdowns_per_15, player1_take_downs_per_15, player1_takedown_accuracy, player1_takedown_defense, player1_sub_attempts_per_15],
-    'fighter2': [player2_height, player2_reach, player2_leg_reach, player2_height_inches, player2_body_size, player2_winby_ko, player2_winby_sub, player2_winby_dec, player2_avg_fighttime, player2_knockdowns_per_15, player2_take_downs_per_15, player2_takedown_accuracy, player2_takedown_defense, player2_sub_attempts_per_15]
+    'metric': ['Height', 'Reach (Inches)', 'Leg Reach (Inches)', 'Height (Inches)', 
+               'Upper Body Length (Inches)', 'Win by KO (%)', 'Win by Sub(%)', 'Win by Dec(%)', 
+               'Avg Fight Time', 'Knockdowns per 15', 'Takedowns per 15', 'Takedown Accuracy (%)', 
+               'Takedown Defense (%)', 'Sub Attempts per 15', 'Strike Attempts per Min',
+               'Strike Accuracy (%)', 'Strike Defense (%)'],
+    'fighter1': [player1_height, player1_reach, player1_leg_reach, player1_height_inches, 
+                 player1_body_size, player1_winby_ko, player1_winby_sub, player1_winby_dec, 
+                 player1_avg_fighttime, player1_knockdowns_per_15, player1_take_downs_per_15, 
+                 player1_takedown_accuracy, player1_takedown_defense, player1_sub_attempts_per_15,
+                 player1_sig_strike_attempts_per_min, player1_strike_accuracy, player1_strike_defense],
+    'fighter2': [player2_height, player2_reach, player2_leg_reach, player2_height_inches, 
+                 player2_body_size, player2_winby_ko, player2_winby_sub, player2_winby_dec, 
+                 player2_avg_fighttime, player2_knockdowns_per_15, player2_take_downs_per_15, 
+                 player2_takedown_accuracy, player2_takedown_defense, player2_sub_attempts_per_15,
+                 player2_sig_strike_attempts_per_min, player2_strike_accuracy, player2_strike_defense]
 })
 fighter_metrics = fighter_metrics.set_index('metric')
+# drop first row of df
+fighter_metrics = fighter_metrics.iloc[1:]
 
 # make sure each column is a float
 def time_to_float(time_str):
@@ -426,7 +480,8 @@ fighter_metrics['dif'] = fighter_metrics[selected_fighter_1] - fighter_metrics[s
 fighter_metrics = fighter_metrics.round(2)
 
 # drop height in inches
-fighter_metrics = fighter_metrics.drop(['Height (Inches)'], axis=0)
+if 'Height (Inches)' in fighter_metrics.index:
+    fighter_metrics = fighter_metrics.drop(['Height (Inches)'], axis=0)
 
 # rearraange columns so dif in middle
 fighter_metrics = fighter_metrics[[selected_fighter_1, 'dif', selected_fighter_2]]
@@ -450,6 +505,12 @@ custom_height = 1000  # adjust this as needed
 html_with_custom_height = f'<div style="height: {custom_height}px; overflow:auto;">{html}</div>'
 
 col2.markdown(html_with_custom_height, unsafe_allow_html=True)
+
+
+
+
+
+
 
 
 ##      TAPOLOGY     ##
@@ -507,8 +568,6 @@ fighter_1_promo = fighter_1_promo.loc[['Wins', 'Losses'] + [i for i in fighter_1
 fighter_2_promo = fighter_2_promo.loc[['Wins', 'Losses'] + [i for i in fighter_2_promo.index if 'Win %' in i] + [i for i in fighter_2_promo.index if 'Loss %' in i] + [i for i in fighter_2_promo.index if i not in ['Years', 'Wins', 'Losses'] and 'Win %' not in i and 'Loss %' not in i]]
 
 
-
-
 #display in 2 columns
 col1, col2 = st.columns(2)
 col1.table(fighter_1_promo)
@@ -540,6 +599,15 @@ st.subheader('Fight Results')
 col1, col2 = st.columns(2)
 col1.write(fighter_1_fight_results)
 col2.write(fighter_2_fight_results)
+
+
+
+
+
+
+
+
+
 
 
 
