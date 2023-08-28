@@ -31,6 +31,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from PIL import Image
 
 st.set_page_config(page_title='UFC Prediction', page_icon=None, layout="wide", initial_sidebar_state="auto" )
 
@@ -233,7 +234,7 @@ selected_fighter_2_last_name = selected_fighter_2.split(' ')[-1]
 
 selected_matchup_url = next_event_data[next_event_data['fighter1'] == selected_fighter_1]['matchup_url'].values[0]
 
-# Grab fighter pictures
+# Grab fighter pictures, download to disk. If already downloaded, load. 
 def get_fighter_pic_url(selected_matchup_url, fighter_choice):
     # Split the selected fighter names into first and last names
     fighter_last_name1 = selected_fighter_1.split(' ')[-1]
@@ -300,22 +301,26 @@ def get_fighter_pic_url(selected_matchup_url, fighter_choice):
 
 
 # try loading fighter images. If fail, call function
+
+# Check and open the first fighter image
 try:
     fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
-    # open image
     fighter1_final_image = Image.open(fighter1_img)
-    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
-    st.write('fighter images found?')
-    # open image
-    fighter2_final_image = Image.open(fighter2_img)
-except:
-    st.write('fighter images not found. Calling function')
-    # Call the function
+    st.write('fighter 1 image found')
+except FileNotFoundError:
+    st.write('fighter 1 image not found. Calling function')
     get_fighter_pic_url(selected_matchup_url, 1)
-    get_fighter_pic_url(selected_matchup_url, 2)  
     fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
-    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'  
 
+# Check and open the second fighter image
+try:
+    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
+    fighter2_final_image = Image.open(fighter2_img)
+    st.write('fighter 2 image found')
+except FileNotFoundError:
+    st.write('fighter 2 image not found. Calling function')
+    get_fighter_pic_url(selected_matchup_url, 2)
+    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
 
 
 
@@ -450,8 +455,6 @@ fighter_metrics = pd.DataFrame({
                  player2_sig_strike_attempts_per_min, player2_strike_accuracy, player2_strike_defense]
 })
 fighter_metrics = fighter_metrics.set_index('metric')
-# drop first row of df
-fighter_metrics = fighter_metrics.iloc[1:]
 
 # make sure each column is a float
 def time_to_float(time_str):
@@ -649,8 +652,8 @@ col_name = merged_df.columns[0]
 # change it to 'Date - Fighter'
 merged_df.rename(columns={col_name:'Date - Fighter'}, inplace=True)
 
-# Split the 'Date - Fighter' column into two columns at 'PM'
-merged_df[['Time', 'Fighter']] = merged_df['Date - Fighter'].str.split('PM', expand=True)
+# Split the 'Date - Fighter' column into two columns at 'PM' OR 'AM'
+merged_df[['Time', 'Fighter']] = merged_df['Date - Fighter'].str.split('PM|AM', expand=True)
 # Drop the 'Date - Fighter' column
 merged_df.drop(columns=['Date - Fighter'], inplace=True)
 # drop the Point Spread column
