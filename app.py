@@ -32,14 +32,21 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from PIL import Image
+import subprocess
 
 st.set_page_config(page_title='UFC Prediction', page_icon=None, layout="wide", initial_sidebar_state="auto" )
 
 home = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/data'
 home2 = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2'
+home3 = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/V2_Newer_Notebooks/'
 os.chdir(home)
 
+update_ufc_function = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/V2_Newer_Notebooks/Scrape_UFC_Upcoming_Events.py'
+update_tapology_function = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/V2_Newer_Notebooks/Scraping Tapology Update.py'
 
+if st.button('Scrape! '):
+     subprocess.run(["python", update_ufc_function])
+     subprocess.run(["python", update_tapology_function])
 
 
 #------------------------------  Define Functions -----------------------------------------------------------------
@@ -198,6 +205,15 @@ try:
     next_event_data = pd.read_csv(home + '/final/next_fights/'+ next_event_title+ '_.csv')
 except:
     st.write('No data for ' + next_event_title)
+    os.system('V2_Newer_Notebooks/Scrape_UFC_Upcoming_Events.py')
+    
+    # Add "Would you like to scrape?" Button
+
+# if st.button('Scrape ' + next_event_title):
+#     os.system('V2_Newer_Notebooks/Scrape_UFC_Upcoming_Events.py')
+#     os.system('V2_Newer_Notebooks/Scraping Tapology Update.py')
+#     next_event_data = pd.read_csv(home + '/final/next_fights/'+ next_event_title+ '_.csv')
+
 
 
 
