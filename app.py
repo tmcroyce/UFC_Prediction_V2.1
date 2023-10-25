@@ -41,6 +41,22 @@ home2 = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/
 home3 = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/V2_Newer_Notebooks/'
 os.chdir(home)
 
+current_files = os.listdir(home + '/final/aggregates')
+current_files = [i for i in current_files if 'Current' in i]
+# get most recent file
+current_files.sort()
+current_file = current_files[-1]
+
+# print current file name
+st.write('Current File: ' + current_file)
+current_fighter_averages = current_file
+
+# load current fighter averages
+current_fighter_averages = pd.read_csv(home + '/final/aggregates/' + current_file)
+
+#st.write(current_fighter_averages)
+
+
 update_ufc_function = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/V2_Newer_Notebooks/Scrape_UFC_Upcoming_Events.py'
 update_tapology_function = '/Users/travisroyce/Library/CloudStorage/OneDrive-Personal/Data Science/Personal_Projects/Sports/UFC_Prediction_V2/V2_Newer_Notebooks/Scraping Tapology Update.py'
 
@@ -522,6 +538,47 @@ html_with_custom_height = f'<div style="height: {custom_height}px; overflow:auto
 col2.markdown(html_with_custom_height, unsafe_allow_html=True)
 
 
+## YES
+
+
+# ## Get Current Averages for each fighter
+# # get fighter 1 averages from current_fighter_averages
+fighter_1_avgs = current_fighter_averages[current_fighter_averages['Fighter_A'] == selected_fighter_1]
+fighter_2_avgs = current_fighter_averages[current_fighter_averages['Fighter_A'] == selected_fighter_2]
+
+
+
+# round all values in fighter_avgs to 3 decimals
+fighter_1_avgs = fighter_1_avgs.round(3)
+fighter_2_avgs = fighter_2_avgs.round(3)
+
+trans_fighter_1_avgs = fighter_1_avgs.T
+trans_fighter_2_avgs = fighter_2_avgs.T
+
+# merge fighter 1 and fighter 2 averages into one dataframe by index
+both_fighter_avgs = pd.merge(trans_fighter_1_avgs, trans_fighter_2_avgs, left_index=True, right_index=True)
+
+# drop unnamed rows
+unnamed_rows = [i for i in both_fighter_avgs.index if 'Unnamed' in i]
+both_fighter_avgs = both_fighter_avgs.drop(unnamed_rows, axis=0)
+# replace nans with 0
+both_fighter_avgs = both_fighter_avgs.fillna(0)
+
+
+st.table(both_fighter_avgs)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -604,6 +661,10 @@ fighter_2_fight_results = pd.read_csv(home + '/tapology/fighters/' + fighter_2_f
 # Re-arrange columns to be Opponent Name, Fight Date, Fight Summary, Event, and then the rest
 fighter_1_fight_results = fighter_1_fight_results[['Opponent Name', 'Fight Date', 'Fight Summary', 'Event'] + [col for col in fighter_1_fight_results.columns if col not in ['Opponent Name', 'Fight Date', 'Fight Summary', 'Event']]]
 fighter_2_fight_results = fighter_2_fight_results[['Opponent Name', 'Fight Date', 'Fight Summary', 'Event'] + [col for col in fighter_2_fight_results.columns if col not in ['Opponent Name', 'Fight Date', 'Fight Summary', 'Event']]]
+
+# drop rows where Fight Summary is Cancelled Bout
+fighter_1_fight_results = fighter_1_fight_results[~fighter_1_fight_results['Fight Summary'].str.contains('Cancelled Bout', na=False)]
+fighter_2_fight_results = fighter_2_fight_results[~fighter_2_fight_results['Fight Summary'].str.contains('Cancelled Bout', na=False)]
 
 # add line
 st.write('---')
