@@ -253,26 +253,70 @@ ufc_data = next_event_data[next_event_data['fighter1'] + ' vs. ' + next_event_da
 selected_fighter_1 = fight.split(' vs. ')[0]
 selected_fighter_2 = fight.split(' vs. ')[1].strip()
 
+# print selected fighters
+st.write('Selected Fighters: ' + selected_fighter_1 + ' vs. ' + selected_fighter_2)
+
 # get last names
 selected_fighter_1_last_name = selected_fighter_1.split(' ')[-1]
 selected_fighter_2_last_name = selected_fighter_2.split(' ')[-1]
 
-#st.dataframe(next_event_data)
+# print last names
+st.write('Last Names: ' + selected_fighter_1_last_name + ' vs. ' + selected_fighter_2_last_name)
 
+# fix names with special characters
+import re
+
+def replace_special_characters(name):
+    replacements = {
+        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss',
+        'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue',
+        'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+        'à': 'a', 'â': 'a', 'á': 'a', 'ã': 'a', 'å': 'a', 'ą': 'a',
+        'ç': 'c', 'č': 'c', 'ć': 'c',
+        'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i', 'ı': 'i',
+        'ł': 'l',
+        'ñ': 'n', 'ń': 'n',
+        'ó': 'o', 'ò': 'o', 'ô': 'o', 'õ': 'o', 'ø': 'o', 'ő': 'o',
+        'ś': 's', 'š': 's', 'ş': 's',
+        'ț': 't', 'ť': 't',
+        'ù': 'u', 'ú': 'u', 'û': 'u', 'ů': 'u', 'ű': 'u',
+        'ý': 'y', 'ÿ': 'y',
+        'ź': 'z', 'ż': 'z', 'ž': 'z',
+        'ř': 'r'
+    }
+    
+    for original, replacement in replacements.items():
+        name = name.replace(original, replacement)
+    
+    return name
+
+selected_fighter_1_fixed = replace_special_characters(selected_fighter_1)
+selected_fighter_2_fixed = replace_special_characters(selected_fighter_2)
+
+# Print Fixed Names
+st.write('Fixed Names: ' + selected_fighter_1_fixed + ' vs. ' + selected_fighter_2_fixed)
+
+
+# fix selected fighter last names
+selected_fighter_1_last_name = replace_special_characters(selected_fighter_1_last_name)
+selected_fighter_2_last_name = replace_special_characters(selected_fighter_2_last_name)
+
+# Print Fixed Last Names
+st.write('Fixed Last Names: ' + selected_fighter_1_last_name + ' vs. ' + selected_fighter_2_last_name)
 
 selected_matchup_url = next_event_data[next_event_data['fighter1'] == selected_fighter_1]['matchup_url'].values[0]
 
 # Grab fighter pictures, download to disk. If already downloaded, load. 
 def get_fighter_pic_url(selected_matchup_url, fighter_choice):
     # Split the selected fighter names into first and last names
-    fighter_last_name1 = selected_fighter_1.split(' ')[-1]
+    fighter_last_name1 = selected_fighter_1_last_name
     fighter_last_name1 = fighter_last_name1.upper()
     # drop any ' in the name
     fighter_last_name1 = fighter_last_name1.replace("'", '')
     fighter_first_name1 = selected_fighter_1.split(' ')[0]
     fighter_first_name1 = fighter_first_name1.upper()
 
-    fighter_last_name2 = selected_fighter_2.split(' ')[-1]
+    fighter_last_name2 = selected_fighter_2_last_name
     fighter_last_name2 = fighter_last_name2.upper()
     # drop any ' in the name
     fighter_last_name2 = fighter_last_name2.replace("'", '')
@@ -332,23 +376,23 @@ def get_fighter_pic_url(selected_matchup_url, fighter_choice):
 
 # Check and open the first fighter image
 try:
-    fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
+    fighter1_img = home + '/fighter_images/' + str(selected_fighter_1_fixed) + '.png'
     fighter1_final_image = Image.open(fighter1_img)
     st.write('fighter 1 image found')
 except FileNotFoundError:
     st.write('fighter 1 image not found. Calling function')
     get_fighter_pic_url(selected_matchup_url, 1)
-    fighter1_img = home + '/fighter_images/' + str(selected_fighter_1) + '.png'
+    fighter1_img = home + '/fighter_images/' + str(selected_fighter_1_fixed) + '.png'
 
 # Check and open the second fighter image
 try:
-    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
+    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2_fixed) + '.png'
     fighter2_final_image = Image.open(fighter2_img)
     st.write('fighter 2 image found')
 except FileNotFoundError:
     st.write('fighter 2 image not found. Calling function')
     get_fighter_pic_url(selected_matchup_url, 2)
-    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2) + '.png'
+    fighter2_img = home + '/fighter_images/' + str(selected_fighter_2_fixed) + '.png'
 
 
 
